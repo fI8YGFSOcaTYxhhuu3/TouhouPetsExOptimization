@@ -1,0 +1,7 @@
+displayName = 东方小祖宗 - 性能缺陷优化
+author = 匿名
+version = 0.1
+includeSource = true
+modReferences = TouhouPetsEx
+sortAfter = TouhouPetsEx
+homepage = https://github.com/fI8YGFSOcaTYxhhuu3/TouhouPetsExOptimization

@@ -1,0 +1,117 @@
+Configs: {
+	TouhouPetsExOptimizationConfig: {
+		DisplayName: 配置
+
+		Headers: {
+			优化开关: 优化开关
+			优化模式: 优化模式
+			调试选项: 调试选项
+		}
+
+		优化开关_GEnhanceTile_DrawEffects: {
+			Label: 函数 - GEnhanceTile.DrawEffects
+			Tooltip:
+				'''
+				针对原模组 GEnhanceTile.DrawEffects 的优化。
+				启用后预计大幅改善性能，屏幕中物块越多越明显。
+
+				[c/FF0000:原版缺陷：] 
+				原模组通过在屏幕上每一个物块调用绘制函数时，遍历所有宠物能力来应用可能修改物块的效果；
+				即使没有启用任何宠物，也会对每个方块遍历全宠物能力。
+				每个方块调用绘制函数时会创建一个新的委托闭包对象，
+				这会导致每秒产生数万个垃圾对象，引发高频的垃圾回收，造成明显帧率下降。
+
+				在 2k 分辨率的默认缩放下，绘制范围内最高可包含 145*90=13050 个非空方块，
+				锁定 60 fps 时，每个方块每秒调用 15 次绘制函数，每次绘制遍历并调用 59 个宠物能力，
+				因此最终产生每秒 195750 次 GEnhanceTile.DrawEffects 调用和委托对象内存分配，
+				以及 11549250 次 BaseEnhance.TileDrawEffects 调用，即使什么宠物也没启用。
+				'''
+		}
+
+		优化开关_GEnhanceNPCs_PreAI_AI: {
+			Label: 函数 - GEnhanceNPCs.PreAI & AI
+			Tooltip:
+				'''
+				针对原模组 GEnhanceNPCs.PreAI 和 AI 的优化。
+				启用后预计中幅改善性能，世界中 NPC 越多越明显。
+
+				[c/FF0000:原版缺陷：] 
+				每秒 61 次，世界中的每个 NPC 执行 AI 逻辑时，都会无条件遍历所有宠物能力实例。
+				无论该 NPC 是否需要被应用效果，也无论当前是否启用了对应的宠物，系统都会进行完整的循环检查。
+				同时，由于使用了 lambda 表达式封装逻辑，每次对每个 NPC 的调用都会分配新的委托闭包对象。
+
+				若世界中有 100 个活动 NPC，
+				每秒将产生 100 * 61 = 6100 次 GEnhanceNPCs.PreAI & AI 调用和委托对象内存分配，
+				以及 100 * 61 * 59 = 359900 次 BaseEnhance.PreAI & AI 调用。
+				'''
+		}
+
+		优化开关_GEnhanceItems_UpdateInventory: {
+			Label: 函数 - GEnhanceItems.UpdateInventory
+			Tooltip:
+				'''
+				针对原模组 GEnhanceItems.UpdateInventory 的优化。
+				启用后预计略微改善性能。
+
+				[c/FF0000:原版缺陷：] 
+				每秒 61 次，玩家背包中的每个非空物品槽（包括弹药、钱币等）会遍历所有宠物能力。
+				同样因为委托闭包机制，导致每秒为背包中的每个物品产生少量垃圾对象。
+
+				若玩家背包中有 50 个物品，
+				每秒将产生 50 * 61 = 3050 次 GEnhanceItems.UpdateInventory 调用与内存分配，
+				以及 50 * 61 * 59 = 179950 次 BaseEnhance.UpdateInventory 调用。
+
+				性能监控中的 BaseEnhance.UpdateInventory 调用次数一般会高于此处产生的调用次数。
+				'''
+		}
+
+		优化模式_GEnhanceTile_DrawEffects: {
+			Label: 函数 - GEnhanceTile.DrawEffects
+			Tooltip: 选择处理该逻辑的具体策略。
+		}
+
+		优化模式_GEnhanceNPCs_PreAI_AI: {
+			Label: 函数 - GEnhanceNPCs.PreAI & AI
+			Tooltip: 选择处理该逻辑的具体策略。
+		}
+
+		优化模式_GEnhanceItems_UpdateInventory: {
+			Label: 函数 - GEnhanceItems.UpdateInventory
+			Tooltip: 选择处理该逻辑的具体策略。
+		}
+
+		性能监控: {
+			Label: 性能监控
+			Tooltip: 显示性能监控面板，其中显示各函数的调用次数。
+		}
+	}
+
+	优化模式: {
+		Tooltip: ""
+
+		智能缓存: {
+			Label: 智能缓存
+			Tooltip:
+				'''
+				[保留原有功能，大幅提升性能]
+
+				在模组加载时注册所有实际有效的宠物，
+				运行时只调用真正重写了对应逻辑的宠物代码，跳过所有未实现的空逻辑。
+				同时移除了原版中的委托分配，彻底消除了由此产生的 GC 内存压力。
+				这是最推荐的模式，既不丢失任何特效（如物块发光、NPC特殊AI），又能解决卡顿。
+				'''
+		}
+
+		暴力截断: {
+			Label: 暴力截断
+			Tooltip:
+				'''
+				[禁用原有功能，获得极限帧率]
+
+				直接阻止原模组相关代码的运行，不执行任何检查。
+				这意味着相关的特效或逻辑将完全失效（例如受宠物影响的物块不再发光、NPC不再受宠物特殊Buff影响）。
+				仅建议在未召唤具有对应能力的宠物时启用（例如，本补丁制作时，原模组中仅有小恶魔会影响书籍图块）。
+				'''
+		}
+	}
+}
