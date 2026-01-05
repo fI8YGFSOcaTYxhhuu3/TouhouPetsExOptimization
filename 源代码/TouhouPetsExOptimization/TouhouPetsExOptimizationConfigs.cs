@@ -6,6 +6,7 @@ namespace TouhouPetsExOptimization;
 
 
 public enum 优化模式 {
+    关闭补丁,
     智能缓存,
     暴力截断
 }
@@ -13,17 +14,6 @@ public enum 优化模式 {
 public class TouhouPetsExOptimizationConfig : ModConfig {
 
     public override ConfigScope Mode => ConfigScope.ClientSide;
-
-    [Header( "优化开关" )]
-
-    [DefaultValue( true )]
-    public bool 优化开关_GEnhanceTile_DrawEffects;
-
-    [DefaultValue( true )]
-    public bool 优化开关_GEnhanceNPCs_PreAI_AI;
-
-    [DefaultValue( true )]
-    public bool 优化开关_GEnhanceItems_UpdateInventory;
 
     [Header( "优化模式" )]
 

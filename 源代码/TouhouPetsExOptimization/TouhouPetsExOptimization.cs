@@ -18,7 +18,7 @@ public class TouhouPetsExOptimization : Mod {
     private Hook 钩子_GEnhanceNPCs_AI;
     private Hook 钩子_GEnhanceNPCs_PreAI;
     private Hook 钩子_GEnhanceItems_UpdateInventory;
-	
+
     private ILHook IL钩子_GEnhanceTile_ProcessDemonismAction;
     private ILHook IL钩子_GEnhanceNPCs_ProcessDemonismAction_Action;
     private ILHook IL钩子_GEnhanceNPCs_ProcessDemonismAction_Func;
@@ -29,7 +29,7 @@ public class TouhouPetsExOptimization : Mod {
     private static List<Tuple<object, MethodInfo>> 缓存_GEnhanceNPCs_PreAI = new();
     private static List<Tuple<object, MethodInfo>> 缓存_GEnhanceItems_UpdateInventory = new();
 
-    private delegate void 委托_TileDrawEffects( object self, int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData ); 
+    private delegate void 委托_TileDrawEffects( object self, int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData );
     private delegate void 委托_TileDrawEffects_钩子( 委托_TileDrawEffects orig, object self, int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData );
     private delegate void 委托_NPCAI( object self, NPC npc );
     private delegate bool 委托_NPCPreAI( object self, NPC npc );
@@ -38,7 +38,7 @@ public class TouhouPetsExOptimization : Mod {
     public override void Load() {
         if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod 模组 ) ) return;
 
-        Load_挂钩_GEnhanceTile_DrawEffects( 模组 ); 
+        Load_挂钩_GEnhanceTile_DrawEffects( 模组 );
         Load_挂钩_GEnhanceNPCs_AI( 模组 );
         Load_挂钩_GEnhanceNPCs_PreAI( 模组 );
         Load_挂钩_GEnhanceItems_UpdateInventory( 模组 );
@@ -50,7 +50,7 @@ public class TouhouPetsExOptimization : Mod {
         钩子_GEnhanceNPCs_AI?.Dispose(); 钩子_GEnhanceNPCs_AI = null;
         钩子_GEnhanceNPCs_PreAI?.Dispose(); 钩子_GEnhanceNPCs_PreAI = null;
         钩子_GEnhanceItems_UpdateInventory?.Dispose(); 钩子_GEnhanceItems_UpdateInventory = null;
-		
+
         IL钩子_GEnhanceTile_ProcessDemonismAction?.Dispose(); IL钩子_GEnhanceTile_ProcessDemonismAction = null;
         IL钩子_GEnhanceNPCs_ProcessDemonismAction_Action?.Dispose(); IL钩子_GEnhanceNPCs_ProcessDemonismAction_Action = null;
         IL钩子_GEnhanceNPCs_ProcessDemonismAction_Func?.Dispose(); IL钩子_GEnhanceNPCs_ProcessDemonismAction_Func = null;
@@ -67,27 +67,34 @@ public class TouhouPetsExOptimization : Mod {
         MethodInfo 函数 = 类型?.GetMethod( "DrawEffects", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
         if ( 函数 == null ) return;
 
-        钩子_GEnhanceTile_DrawEffects = new Hook( 函数, new 委托_TileDrawEffects_钩子( 替换函数_GEnhanceTile_DrawEffects));
+        钩子_GEnhanceTile_DrawEffects = new Hook( 函数, new 委托_TileDrawEffects_钩子( 替换函数_GEnhanceTile_DrawEffects ) );
         钩子_GEnhanceTile_DrawEffects.Apply();
     }
-    
+
     private static void 替换函数_GEnhanceTile_DrawEffects( 委托_TileDrawEffects orig, object self, int i, int j, int type, SpriteBatch sb, ref TileDrawInfo drawData ) {
         var 模组配置 = ModContent.GetInstance<TouhouPetsExOptimizationConfig>();
         bool 启用性能监控 = 模组配置.性能监控;
 
         if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_GEnhanceTile_DrawEffects++;
-        
-        if ( !模组配置.优化开关_GEnhanceTile_DrawEffects ) { orig( self, i, j, type, sb, ref drawData ); return; }
-        if ( 模组配置.优化模式_GEnhanceTile_DrawEffects == 优化模式.暴力截断 ) return;
-        if ( 缓存_GEnhanceTile_DrawEffects.Count == 0 ) return;
 
-        object[] 参数 = [i, j, type, sb, drawData];
-        foreach ( var 元组 in 缓存_GEnhanceTile_DrawEffects ) try {
-                if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_BaseEnhance_TileDrawEffects++;
-                元组.Item2.Invoke( 元组.Item1, 参数 ); 
-            } catch { }
+        switch ( 模组配置.优化模式_GEnhanceTile_DrawEffects ) {
+            case 优化模式.关闭补丁: orig( self, i, j, type, sb, ref drawData ); return;
+            case 优化模式.暴力截断: return;
+            case 优化模式.智能缓存:
+                if ( 缓存_GEnhanceTile_DrawEffects.Count == 0 ) return;
 
-        drawData = ( TileDrawInfo ) 参数[ 4 ];
+                object[] 参数 = [ i, j, type, sb, drawData ];
+                foreach ( var 元组 in 缓存_GEnhanceTile_DrawEffects ) try {
+                        if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_BaseEnhance_TileDrawEffects++;
+                        元组.Item2.Invoke( 元组.Item1, 参数 );
+                    }
+                    catch { }
+
+                drawData = ( TileDrawInfo ) 参数[ 4 ];
+
+                return;
+            default: orig( self, i, j, type, sb, ref drawData ); return;
+        }
     }
 
     private void Load_挂钩_GEnhanceNPCs_AI( Mod 模组 ) {
@@ -97,19 +104,26 @@ public class TouhouPetsExOptimization : Mod {
 
         钩子_GEnhanceNPCs_AI = new Hook( 函数, new Action<委托_NPCAI, object, NPC>( ( orig, self, npc ) => {
             var 模组配置 = ModContent.GetInstance<TouhouPetsExOptimizationConfig>();
-            bool 启用性能监控 = 模组配置.性能监控; 
-            
+            bool 启用性能监控 = 模组配置.性能监控;
+
             if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_GEnhanceNPCs_AI++;
 
-            if ( !模组配置.优化开关_GEnhanceNPCs_PreAI_AI ) { orig( self, npc ); return; }
-            if ( 模组配置.优化模式_GEnhanceNPCs_PreAI_AI == 优化模式.暴力截断 ) return;
-            if ( 缓存_GEnhanceNPCs_AI.Count == 0 ) return;
+            switch ( 模组配置.优化模式_GEnhanceNPCs_PreAI_AI ) {
+                case 优化模式.关闭补丁: orig( self, npc ); return;
+                case 优化模式.暴力截断: return;
+                case 优化模式.智能缓存:
+                    if ( 缓存_GEnhanceNPCs_AI.Count == 0 ) return;
 
-            object[] 参数 = [npc];
-            foreach ( var 元组 in 缓存_GEnhanceNPCs_AI ) try {
-                    if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_BaseEnhance_PreAI_AI++;
-                    元组.Item2.Invoke( 元组.Item1, 参数 ); 
-                } catch { }
+                    object[] 参数 = [ npc ];
+                    foreach ( var 元组 in 缓存_GEnhanceNPCs_AI ) try {
+                            if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_BaseEnhance_PreAI_AI++;
+                            元组.Item2.Invoke( 元组.Item1, 参数 );
+                        }
+                        catch { }
+
+                    return;
+                default: orig( self, npc ); return;
+            }
         } ) );
         钩子_GEnhanceNPCs_AI.Apply();
     }
@@ -120,29 +134,33 @@ public class TouhouPetsExOptimization : Mod {
         if ( 函数 == null ) return;
 
         钩子_GEnhanceNPCs_PreAI = new Hook( 函数, new Func<委托_NPCPreAI, object, NPC, bool>( ( orig, self, npc ) => {
-            var 模组配置 = ModContent.GetInstance<TouhouPetsExOptimizationConfig>(); 
-            bool 启用性能监控 = 模组配置.性能监控; 
-            
+            var 模组配置 = ModContent.GetInstance<TouhouPetsExOptimizationConfig>();
+            bool 启用性能监控 = 模组配置.性能监控;
+
             if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_GEnhanceNPCs_PreAI++;
 
-            if ( !模组配置.优化开关_GEnhanceNPCs_PreAI_AI ) return orig( self, npc );
-            if ( 模组配置.优化模式_GEnhanceNPCs_PreAI_AI == 优化模式.暴力截断 ) return true;
-            if ( 缓存_GEnhanceNPCs_PreAI.Count == 0 ) return true;
+            switch ( 模组配置.优化模式_GEnhanceNPCs_PreAI_AI ) {
+                case 优化模式.关闭补丁: return orig( self, npc );
+                case 优化模式.暴力截断: return true;
+                case 优化模式.智能缓存:
+                    if ( 缓存_GEnhanceNPCs_PreAI.Count == 0 ) return true;
 
-            object[] 参数 = [npc];
-            bool? 最终结果 = null;
+                    object[] 参数 = [ npc ];
+                    bool? 最终结果 = null;
 
-            foreach ( var 元组 in 缓存_GEnhanceNPCs_PreAI ) {
-                try {
-                    if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_BaseEnhance_PreAI_AI++;
+                    foreach ( var 元组 in 缓存_GEnhanceNPCs_PreAI ) {
+                        try {
+                            if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_BaseEnhance_PreAI_AI++;
 
-                    bool? 结果 = ( bool? ) 元组.Item2.Invoke( 元组.Item1, 参数 );
-                    if ( 结果 == false ) return false;
-                    if ( 结果 != null ) 最终结果 = 结果;
-                }
-                catch { }
+                            bool? 结果 = ( bool? ) 元组.Item2.Invoke( 元组.Item1, 参数 );
+                            if ( 结果 == false ) return false;
+                            if ( 结果 != null ) 最终结果 = 结果;
+                        }
+                        catch { }
+                    }
+                    return 最终结果 ?? true;
+                default: return orig( self, npc );
             }
-            return 最终结果 ?? true;
         } ) );
         钩子_GEnhanceNPCs_PreAI.Apply();
     }
@@ -157,51 +175,57 @@ public class TouhouPetsExOptimization : Mod {
             bool 启用性能监控 = 模组配置.性能监控;
 
             if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_GEnhanceItems_UpdateInventory++;
-            
-            if ( !模组配置.优化开关_GEnhanceItems_UpdateInventory ) { orig( self, item, player ); return; }
-            if ( 模组配置.优化模式_GEnhanceItems_UpdateInventory == 优化模式.暴力截断 ) return;
 
-            if ( item.ModItem?.Mod.Name == "TouhouPets" ) { orig( self, item, player ); return; }
-            if ( 缓存_GEnhanceItems_UpdateInventory.Count == 0 ) return;
+            switch ( 模组配置.优化模式_GEnhanceItems_UpdateInventory ) {
+                case 优化模式.关闭补丁: orig( self, item, player ); return;
+                case 优化模式.暴力截断: return;
+                case 优化模式.智能缓存:
+                    if ( item.ModItem?.Mod.Name == "TouhouPets" ) { orig( self, item, player ); return; }
+                    if ( 缓存_GEnhanceItems_UpdateInventory.Count == 0 ) return;
 
-            object[] 参数 = [item, player];
-            foreach ( var 元组 in 缓存_GEnhanceItems_UpdateInventory ) try { 
-                if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_BaseEnhance_UpdateInventory++;
-                元组.Item2.Invoke( 元组.Item1, 参数 ); 
-            } catch { }
+                    object[] 参数 = [ item, player ];
+                    foreach ( var 元组 in 缓存_GEnhanceItems_UpdateInventory ) try {
+                            if ( 启用性能监控 ) TouhouPetsExOptimizationDebugSystem.调用计数_BaseEnhance_UpdateInventory++;
+                            元组.Item2.Invoke( 元组.Item1, 参数 );
+                        }
+                        catch { }
+
+                    return;
+                default: orig( self, item, player ); return;
+            }
         } ) );
         钩子_GEnhanceItems_UpdateInventory.Apply();
     }
 
-    private void Load_挂钩_函数调用计数器(Mod 模组) {
-        Type 类型_BaseEnhance = 模组.Code.GetType("TouhouPetsEx.Enhance.Core.BaseEnhance");
-        Type 类型_Action = typeof(Action<>).MakeGenericType(类型_BaseEnhance);
-        Type 类型_Func = typeof(Func<,>).MakeGenericType(类型_BaseEnhance, typeof(bool?));
+    private void Load_挂钩_函数调用计数器( Mod 模组 ) {
+        Type 类型_BaseEnhance = 模组.Code.GetType( "TouhouPetsEx.Enhance.Core.BaseEnhance" );
+        Type 类型_Action = typeof( Action<> ).MakeGenericType( 类型_BaseEnhance );
+        Type 类型_Func = typeof( Func<,> ).MakeGenericType( 类型_BaseEnhance, typeof( bool? ) );
 
-        Type 类型_Tile = 模组.Code.GetType("TouhouPetsEx.Enhance.Core.GEnhanceTile");
-        MethodInfo 方法_Tile = 类型_Tile?.GetMethod("ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, new Type[] { 类型_Action }, null);
-        if (方法_Tile != null) {
-            IL钩子_GEnhanceTile_ProcessDemonismAction = new ILHook(方法_Tile, (il) => 注入计数逻辑(il, "调用计数_BaseEnhance_TileDrawEffects"));
+        Type 类型_Tile = 模组.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceTile" );
+        MethodInfo 方法_Tile = 类型_Tile?.GetMethod( "ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, new Type[] { 类型_Action }, null );
+        if ( 方法_Tile != null ) {
+            IL钩子_GEnhanceTile_ProcessDemonismAction = new ILHook( 方法_Tile, ( il ) => 注入计数逻辑( il, "调用计数_BaseEnhance_TileDrawEffects" ) );
             IL钩子_GEnhanceTile_ProcessDemonismAction.Apply();
         }
 
-        Type 类型_NPC = 模组.Code.GetType("TouhouPetsEx.Enhance.Core.GEnhanceNPCs");
-        MethodInfo 方法_NPC_Action = 类型_NPC?.GetMethod("ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, new Type[] { 类型_Action }, null);
-        if (方法_NPC_Action != null) {
-            IL钩子_GEnhanceNPCs_ProcessDemonismAction_Action = new ILHook(方法_NPC_Action, (il) => 注入计数逻辑(il, "调用计数_BaseEnhance_PreAI_AI" ) );
+        Type 类型_NPC = 模组.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceNPCs" );
+        MethodInfo 方法_NPC_Action = 类型_NPC?.GetMethod( "ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, new Type[] { 类型_Action }, null );
+        if ( 方法_NPC_Action != null ) {
+            IL钩子_GEnhanceNPCs_ProcessDemonismAction_Action = new ILHook( 方法_NPC_Action, ( il ) => 注入计数逻辑( il, "调用计数_BaseEnhance_PreAI_AI" ) );
             IL钩子_GEnhanceNPCs_ProcessDemonismAction_Action.Apply();
         }
 
-        MethodInfo 方法_NPC_Func = 类型_NPC?.GetMethod("ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, new Type[] { typeof(bool?), 类型_Func }, null);
-        if (方法_NPC_Func != null) {
-            IL钩子_GEnhanceNPCs_ProcessDemonismAction_Func = new ILHook(方法_NPC_Func, (il) => 注入计数逻辑(il, "调用计数_BaseEnhance_PreAI_AI" ) );
+        MethodInfo 方法_NPC_Func = 类型_NPC?.GetMethod( "ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, new Type[] { typeof( bool? ), 类型_Func }, null );
+        if ( 方法_NPC_Func != null ) {
+            IL钩子_GEnhanceNPCs_ProcessDemonismAction_Func = new ILHook( 方法_NPC_Func, ( il ) => 注入计数逻辑( il, "调用计数_BaseEnhance_PreAI_AI" ) );
             IL钩子_GEnhanceNPCs_ProcessDemonismAction_Func.Apply();
         }
 
-        Type 类型_Item = 模组.Code.GetType("TouhouPetsEx.Enhance.Core.GEnhanceItems");
-        MethodInfo 方法_Item = 类型_Item?.GetMethod("ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, new Type[] { 类型_Action }, null);
-        if (方法_Item != null) {
-            IL钩子_GEnhanceItems_ProcessDemonismAction = new ILHook(方法_Item, (il) => 注入计数逻辑(il, "调用计数_BaseEnhance_UpdateInventory"));
+        Type 类型_Item = 模组.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceItems" );
+        MethodInfo 方法_Item = 类型_Item?.GetMethod( "ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, new Type[] { 类型_Action }, null );
+        if ( 方法_Item != null ) {
+            IL钩子_GEnhanceItems_ProcessDemonismAction = new ILHook( 方法_Item, ( il ) => 注入计数逻辑( il, "调用计数_BaseEnhance_UpdateInventory" ) );
             IL钩子_GEnhanceItems_ProcessDemonismAction.Apply();
         }
     }

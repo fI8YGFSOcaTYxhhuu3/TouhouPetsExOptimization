@@ -69,9 +69,9 @@ public class TouhouPetsExOptimizationDebugSystem : ModSystem {
                 string 文本 = $"[性能监控]\n" +
                                 $"当前帧率 = {显示数值_帧率:N0}\n" +
                                 $"\n" +
-                                $"优化模式 - GEnhanceTile.DrawEffects: {( !模组配置.优化开关_GEnhanceTile_DrawEffects ? "关闭" : 模组配置.优化模式_GEnhanceTile_DrawEffects.ToString() )}\n" +
-                                $"优化模式 - GEnhanceNPCs.PreAI & AI: {( !模组配置.优化开关_GEnhanceNPCs_PreAI_AI ? "关闭" : 模组配置.优化模式_GEnhanceNPCs_PreAI_AI.ToString() )}\n" +
-                                $"优化模式 - GEnhanceItems.UpdateInventory: {( !模组配置.优化开关_GEnhanceItems_UpdateInventory ? "关闭" : 模组配置.优化模式_GEnhanceItems_UpdateInventory.ToString() )}\n" +
+                                $"优化模式 - GEnhanceTile.DrawEffects: {模组配置.优化模式_GEnhanceTile_DrawEffects.ToString()}\n" +
+                                $"优化模式 - GEnhanceNPCs.PreAI & AI: {模组配置.优化模式_GEnhanceNPCs_PreAI_AI.ToString()}\n" +
+                                $"优化模式 - GEnhanceItems.UpdateInventory: {模组配置.优化模式_GEnhanceItems_UpdateInventory.ToString()}\n" +
                                 $"\n" +
                                 $"每秒调用次数 - GEnhanceTile.DrawEffects = {显示数值_调用计数_GEnhanceTile_DrawEffects:N0}\n" +
                                 $"每秒调用次数 - BaseEnhance.TileDrawEffects = {显示数值_调用计数_BaseEnhance_TileDrawEffects:N0}\n" +

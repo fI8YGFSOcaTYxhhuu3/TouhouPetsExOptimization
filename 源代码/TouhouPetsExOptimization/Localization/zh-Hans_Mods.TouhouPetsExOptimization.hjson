@@ -3,12 +3,11 @@ Configs: {
 		DisplayName: 配置
 
 		Headers: {
-			优化开关: 优化开关
 			优化模式: 优化模式
 			调试选项: 调试选项
 		}
 
-		优化开关_GEnhanceTile_DrawEffects: {
+		优化模式_GEnhanceTile_DrawEffects: {
 			Label: 函数 - GEnhanceTile.DrawEffects
 			Tooltip:
 				'''
@@ -28,7 +27,7 @@ Configs: {
 				'''
 		}
 
-		优化开关_GEnhanceNPCs_PreAI_AI: {
+		优化模式_GEnhanceNPCs_PreAI_AI: {
 			Label: 函数 - GEnhanceNPCs.PreAI & AI
 			Tooltip:
 				'''
@@ -46,7 +45,7 @@ Configs: {
 				'''
 		}
 
-		优化开关_GEnhanceItems_UpdateInventory: {
+		优化模式_GEnhanceItems_UpdateInventory: {
 			Label: 函数 - GEnhanceItems.UpdateInventory
 			Tooltip:
 				'''
@@ -65,21 +64,6 @@ Configs: {
 				'''
 		}
 
-		优化模式_GEnhanceTile_DrawEffects: {
-			Label: 函数 - GEnhanceTile.DrawEffects
-			Tooltip: 选择处理该逻辑的具体策略。
-		}
-
-		优化模式_GEnhanceNPCs_PreAI_AI: {
-			Label: 函数 - GEnhanceNPCs.PreAI & AI
-			Tooltip: 选择处理该逻辑的具体策略。
-		}
-
-		优化模式_GEnhanceItems_UpdateInventory: {
-			Label: 函数 - GEnhanceItems.UpdateInventory
-			Tooltip: 选择处理该逻辑的具体策略。
-		}
-
 		性能监控: {
 			Label: 性能监控
 			Tooltip: 显示性能监控面板，其中显示各函数的调用次数。
@@ -88,6 +72,17 @@ Configs: {
 
 	优化模式: {
 		Tooltip: ""
+
+		关闭补丁: {
+			Label: 关闭补丁
+			Tooltip:
+				'''
+				[关闭此补丁，使用原版逻辑]
+
+				完全回退到原模组的逻辑，不进行任何拦截或优化。
+				此模式下性能表现将与原模组一致。
+				'''
+		}
 
 		智能缓存: {
 			Label: 智能缓存

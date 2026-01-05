@@ -3,50 +3,49 @@ Configs: {
 		DisplayName: Configuration
 
 		Headers: {
-			优化开关: Optimization Switches
-			优化模式: Optimization Modes
+			优化模式: Optimization Mode
 			调试选项: Debug Options
 		}
 
-		优化开关_GEnhanceTile_DrawEffects: {
+		优化模式_GEnhanceTile_DrawEffects: {
 			Label: Function - GEnhanceTile.DrawEffects
 			Tooltip:
 				'''
 				Optimization for the original mod's GEnhanceTile.DrawEffects.
-				Enabling this is expected to significantly improve performance, especially with many tiles on screen.
+				Enabling this is expected to drastically improve performance, especially noticeable with more tiles on screen.
 
 				[c/FF0000:Original Defect:] 
-				The original mod iterates through all pet abilities for every tile drawn on screen to apply potential effects.
-				Even if no pets are enabled, it iterates through all abilities for every single tile.
-				Every time a tile calls the draw function, a new delegate closure object is created.
-				This results in tens of thousands of garbage objects per second, triggering frequent Garbage Collection (GC) and causing noticeable frame drops.
+				The original mod iterates through all pet abilities to apply potential tile modification effects whenever the draw function is called for every single tile on the screen;
+				even if no pets are enabled, it iterates through all pet abilities for every block.
+				A new delegate closure object is created every time a block calls the draw function,
+				leading to tens of thousands of garbage objects generated per second, triggering frequent garbage collection and causing noticeable frame rate drops.
 
-				At 2k resolution with default zoom, the draw area can contain up to 145*90=13050 non-empty tiles.
-				Locked at 60 fps, each tile calls the draw function 15 times per second, iterating and calling 59 pet abilities each time.
-				This results in 195,750 GEnhanceTile.DrawEffects calls and delegate memory allocations per second,
+				At default zoom in 2K resolution, the draw area can contain up to 145*90=13050 non-empty blocks.
+				When locked at 60 FPS, each block calls the draw function 15 times per second, iterating and calling 59 pet abilities each time.
+				Thus, this ultimately results in 195,750 GEnhanceTile.DrawEffects calls and delegate object allocations per second,
 				and 11,549,250 BaseEnhance.TileDrawEffects calls, even if no pets are enabled.
 				'''
 		}
 
-		优化开关_GEnhanceNPCs_PreAI_AI: {
+		优化模式_GEnhanceNPCs_PreAI_AI: {
 			Label: Function - GEnhanceNPCs.PreAI & AI
 			Tooltip:
 				'''
 				Optimization for the original mod's GEnhanceNPCs.PreAI and AI.
-				Enabling this is expected to moderately improve performance, more noticeable with many NPCs in the world.
+				Enabling this is expected to moderately improve performance, especially noticeable with more NPCs in the world.
 
 				[c/FF0000:Original Defect:] 
-				61 times per second, every NPC in the world unconditionally iterates through all pet ability instances when executing AI logic.
-				Regardless of whether the NPC needs effects applied or if the corresponding pet is enabled, the system performs a full loop check.
-				Additionally, due to the use of lambda expressions, a new delegate closure object is allocated for every call to every NPC.
+				61 times per second, every NPC in the world unconditionally iterates through all pet ability instances when executing logic.
+				The system performs a full loop check regardless of whether the NPC needs effects applied or if corresponding pets are currently enabled.
+				Meanwhile, due to logic being encapsulated in lambda expressions, new delegate closure objects are allocated for every call on every NPC.
 
 				If there are 100 active NPCs in the world,
-				this generates 100 * 61 = 6,100 GEnhanceNPCs.PreAI & AI calls and delegate memory allocations per second,
+				this generates 100 * 61 = 6,100 GEnhanceNPCs.PreAI & AI calls and delegate object allocations per second,
 				and 100 * 61 * 59 = 359,900 BaseEnhance.PreAI & AI calls.
 				'''
 		}
 
-		优化开关_GEnhanceItems_UpdateInventory: {
+		优化模式_GEnhanceItems_UpdateInventory: {
 			Label: Function - GEnhanceItems.UpdateInventory
 			Tooltip:
 				'''
@@ -54,63 +53,59 @@ Configs: {
 				Enabling this is expected to slightly improve performance.
 
 				[c/FF0000:Original Defect:] 
-				61 times per second, every non-empty item slot in the player's inventory (including ammo, coins, etc.) iterates through all pet abilities.
-				Similarly, due to the delegate closure mechanism, this generates garbage objects for every item in the inventory per second.
+				61 times per second, every non-empty item slot (including ammo, coins, etc.) in the player's inventory iterates through all pet abilities.
+				Due to the same delegate closure mechanism, this causes a small amount of garbage objects to be generated per second for every item in the inventory.
 
 				If the player has 50 items in their inventory,
 				this generates 50 * 61 = 3,050 GEnhanceItems.UpdateInventory calls and memory allocations per second,
 				and 50 * 61 * 59 = 179,950 BaseEnhance.UpdateInventory calls.
 
-				The BaseEnhance.UpdateInventory call count in the Performance Monitor is generally higher than this value due to other factors.
+				The BaseEnhance.UpdateInventory call count in the Performance Monitor will generally be higher than the count generated here.
 				'''
-		}
-
-		优化模式_GEnhanceTile_DrawEffects: {
-			Label: Function - GEnhanceTile.DrawEffects
-			Tooltip: Select the specific strategy for handling this logic.
-		}
-
-		优化模式_GEnhanceNPCs_PreAI_AI: {
-			Label: Function - GEnhanceNPCs.PreAI & AI
-			Tooltip: Select the specific strategy for handling this logic.
-		}
-
-		优化模式_GEnhanceItems_UpdateInventory: {
-			Label: Function - GEnhanceItems.UpdateInventory
-			Tooltip: Select the specific strategy for handling this logic.
 		}
 
 		性能监控: {
 			Label: Performance Monitor
-			Tooltip: Displays the performance monitor panel showing call counts for each function.
+			Tooltip: Displays the performance monitoring panel, showing call counts for various functions.
 		}
 	}
 
 	优化模式: {
 		Tooltip: ""
 
+		关闭补丁: {
+			Label: Disable Patch
+			Tooltip:
+				'''
+				[Disables this patch, uses original logic]
+
+				Completely reverts to the original mod's logic with no interception or optimization.
+				Performance in this mode will be identical to the original mod.
+				'''
+		}
+
 		智能缓存: {
-			Label: Smart Caching
+			Label: Smart Cache
 			Tooltip:
 				'''
 				[Retains original features, significantly boosts performance]
 
-				Registers all actually effective pets during mod load.
-				At runtime, it only calls pet code that actually overrides the corresponding logic, skipping all unimplemented empty logic.
-				It also removes the delegate allocations from the original mod, completely eliminating the resulting GC memory pressure.
-				This is the recommended mode; it solves stuttering without losing any effects (e.g., tile glow, NPC special AI).
+				Registers all actually effective pets during mod loading,
+				and only calls pet code that explicitly overrides the corresponding logic at runtime, skipping all unimplemented empty logic.
+				Also removes the delegate allocation from the original version, completely eliminating the resulting GC memory pressure.
+				This is the most recommended mode, as it resolves stuttering without losing any special effects (e.g., tile glow, NPC special AI).
 				'''
 		}
 
 		暴力截断: {
-			Label: Aggressive Cutoff
+			Label: Force Cutoff
 			Tooltip:
 				'''
-				[Disables original features, achieves max FPS]
+				[Disables original features, achieves maximum frame rate]
 
-				Directly blocks the execution of the original mod's related code without performing any checks.
-				This means related effects or logic will completely fail (e.g., tiles affected by pets will no longer glow, NPCs will not be affected by special pet buffs).
-				Only recommended if you have not summoned pets with corresponding abilities (e.g., at the time of this patch, only Koakuma affects book tiles).
+				Directly prevents the original mod's related code from running without performing any checks.
+				This means related special effects or logic will completely fail (e.g., blocks affected by pets will no longer glow, NPCs will no longer be affected by special pet buffs).
+				Only recommended when no pets with corresponding abilities are summoned (e.g., at the time of making this patch, only Koakuma in the original mod affects book tiles).
 				'''
 		}
 	}
