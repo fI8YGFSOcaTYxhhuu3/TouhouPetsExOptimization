@@ -9,16 +9,24 @@ namespace TouhouPetsExOptimization;
 
 public class Disclaimer : ModPlayer {
 
-    public override void OnEnterWorld() {
-        if ( Main.netMode == NetmodeID.Server || !ModLoader.HasMod( "TouhouPetsEx" ) ) return;
+    private bool _hasShownDisclaimer = false;
+
+    public override void OnEnterWorld() { _hasShownDisclaimer = false; }
+
+    public override void PostUpdate() {
+        if ( Main.netMode == NetmodeID.Server || _hasShownDisclaimer ) return;
+        if ( Player.whoAmI != Main.myPlayer ) return;
+        if ( !ModLoader.HasMod( "TouhouPetsEx" ) ) { _hasShownDisclaimer = true; return; }
 
         string message =
-            $"[东方小祖宗 - 性能缺陷修复补丁说明]\n" + 
+            $"[东方小祖宗 - 性能缺陷修复补丁说明]\n" +
             $"1. 本补丁采用大量“防御性编程”设计，可应对大多数函数内容变更、函数签名变更、模组缺失、类缺失、函数缺失、字段缺失等情况。\n" +
             $"2. 若前置模组更新导致代码不兼容，本补丁预计将自动失效并回退至原版逻辑，极难导致游戏崩溃。\n" +
             $"3. 如果前置模组或本补丁出现任何问题，请随意向本补丁模组反馈。";
 
         Main.NewText( message, Color.Lime );
+
+        _hasShownDisclaimer = true;
     }
 
 }
