@@ -34,7 +34,7 @@ public class IL_GEnhanceNPCs_AI : BaseHook {
 
         ILLabel labelRunOriginal = c.DefineLabel();
 
-        c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceNPCs_AI == MainConfigs.优化模式.关闭补丁; } );
+        c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceNPCs_AI == MainConfigs.优化模式.关闭补丁 || !System_PatchState.IsSafeToOptimize; } );
         c.Emit( OpCodes.Brtrue, labelRunOriginal );
         c.Emit( OpCodes.Ldarg_1 );
         c.EmitDelegate( OptimizedCode );

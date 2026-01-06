@@ -32,6 +32,8 @@ public class System_Counter : ModSystem {
     private static long 显示数值_调用计数_BaseEnhance_NPCPreAI = 0;
     private static long 显示数值_调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory = 0;
 
+    private static string 显示文本_补丁状态 = "";
+
     private double 计时器 = 0;
 
     public override void Unload() {
@@ -63,6 +65,8 @@ public class System_Counter : ModSystem {
         显示数值_调用计数_BaseEnhance_TileDrawEffects = 调用计数_BaseEnhance_TileDrawEffects;
         显示数值_调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory = 调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory;
 
+        显示文本_补丁状态 = System_PatchState.IsSafeToOptimize ? "未发生已知错误" : "出现已知错误，补丁已自动失效";
+
         调用计数_GEnhanceTile_DrawEffects = 0;
         调用计数_GEnhanceNPCs_AI = 0;
         调用计数_GEnhanceNPCs_PreAI = 0;
@@ -84,7 +88,7 @@ public class System_Counter : ModSystem {
         layers.Insert( 原版界面索引, new LegacyGameInterfaceLayer(
             "TouhouPetsExOptimization: 调试信息",
             delegate {
-                string 文本 = $"[性能监控]\n" +
+                string 文本 = $"[性能监控] 补丁状态: {显示文本_补丁状态}\n" +
                                 $"当前帧率 = {显示数值_帧率:N0}\n" +
                                 $"\n" +
                                 $"优化模式 - GEnhanceTile.DrawEffects: {MainConfigCache.优化模式_GEnhanceTile_DrawEffects.ToString()}\n" +
