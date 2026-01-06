@@ -10,7 +10,8 @@ public class MainConfigs : ModConfig {
     public enum 优化模式 {
         关闭补丁,
         智能缓存,
-        暴力截断
+        暴力截断,
+        旧版模拟
     }
 
     public override ConfigScope Mode => ConfigScope.ClientSide;

@@ -59,7 +59,7 @@ public class IL_TileDrawEffects : BaseHook {
 
     private static void OptimizedCode( int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData ) {
         switch ( MainConfigCache.优化模式_GEnhanceTile_DrawEffects ) {
-            case MainConfigs.优化模式.暴力截断: return;
+            case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
                 var activePets = System_State.LocalPlayerActivePets;
 

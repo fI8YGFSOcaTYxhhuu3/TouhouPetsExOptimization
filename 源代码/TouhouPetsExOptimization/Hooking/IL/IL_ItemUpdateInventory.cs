@@ -55,7 +55,7 @@ public class IL_ItemUpdateInventory : BaseHook {
 
     private static void OptimizedCode( Item item, Player player ) {
         switch ( MainConfigCache.优化模式_GEnhanceItems_UpdateInventory ) {
-            case MainConfigs.优化模式.暴力截断: return;
+            case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
                 var activePets = System_State.LocalPlayerActivePets;
 

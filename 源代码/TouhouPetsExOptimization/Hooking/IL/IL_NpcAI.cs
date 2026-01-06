@@ -54,7 +54,7 @@ public class IL_NpcAI : BaseHook {
 
     private static void OptimizedCode( NPC npc ) {
         switch ( MainConfigCache.优化模式_GEnhanceNPCs_PreAI_AI ) {
-            case MainConfigs.优化模式.暴力截断: return;
+            case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
                 var validPets = System_State.LocalPlayerActivePets;
 
