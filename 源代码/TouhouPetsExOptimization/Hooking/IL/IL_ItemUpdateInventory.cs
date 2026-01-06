@@ -18,12 +18,13 @@ public class IL_ItemUpdateInventory : BaseHook {
 
     public override void Load( Mod targetMod ) {
         Type type = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceItems" );
-        MethodInfo method = type?.GetMethod( "UpdateInventory", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-
-        if ( method != null ) {
-            _hook = new ILHook( method, ManipulateIL );
-            _hook.Apply();
-        }
+        MethodInfo method = type?.GetMethod( "UpdateInventory",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            null,
+            [ typeof( Item ), typeof( Player ) ],
+            null
+        );
+        if ( method != null ) { _hook = new ILHook( method, ManipulateIL ); _hook.Apply(); }
     }
 
     public override void Unload() { _hook?.Dispose(); _hook = null; }
@@ -32,39 +33,39 @@ public class IL_ItemUpdateInventory : BaseHook {
         ILCursor c = new ILCursor( il );
 
         c.Goto( 0 );
-        c.EmitDelegate<Action>( () => { if ( ModContent.GetInstance<MainConfigs>().性能监控 ) System_Counter.调用计数_GEnhanceItems_UpdateInventory++; } );
+        c.EmitDelegate( () => { if ( MainConfigCache.性能监控 ) System_Counter.调用计数_GEnhanceItems_UpdateInventory++; } );
 
         if ( !c.TryGotoNext( MoveType.Before, i => i.MatchCall( "TouhouPetsEx.Enhance.Core.GEnhanceItems", "ProcessDemonismAction" ) ) ) return;
 
         ILLabel labelRunOriginal = c.DefineLabel();
         ILLabel labelSkipOriginal = c.DefineLabel();
 
-        c.EmitDelegate<Func<bool>>( () => { return ModContent.GetInstance<MainConfigs>().优化模式_GEnhanceItems_UpdateInventory == MainConfigs.优化模式.关闭补丁; } );
+        c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceItems_UpdateInventory == MainConfigs.优化模式.关闭补丁; } );
+
         c.Emit( OpCodes.Brtrue, labelRunOriginal );
         c.Emit( OpCodes.Pop );
         c.Emit( OpCodes.Ldarg_1 );
         c.Emit( OpCodes.Ldarg_2 );
-        c.EmitDelegate<Action<Item, Player>>( RunOptimizedLogic );
+        c.EmitDelegate( OptimizedCode );
         c.Emit( OpCodes.Br, labelSkipOriginal );
         c.MarkLabel( labelRunOriginal );
         c.Index++;
         c.MarkLabel( labelSkipOriginal );
     }
 
-    private static void RunOptimizedLogic( Item item, Player player ) {
-        var config = ModContent.GetInstance<MainConfigs>();
-
-        switch ( config.优化模式_GEnhanceItems_UpdateInventory ) {
+    private static void OptimizedCode( Item item, Player player ) {
+        switch ( MainConfigCache.优化模式_GEnhanceItems_UpdateInventory ) {
             case MainConfigs.优化模式.暴力截断: return;
             case MainConfigs.优化模式.智能缓存:
-                if ( System_Cache.ItemUpdateInventory.Count == 0 ) return;
+                var activePets = System_State.LocalPlayerActivePets;
 
-                object[] args = [ item, player ];
-                foreach ( var tuple in System_Cache.ItemUpdateInventory ) try {
-                        if ( config.性能监控 ) System_Counter.调用计数_BaseEnhance_UpdateInventory++;
-                        tuple.Item2.Invoke( tuple.Item1, args );
+                for ( int i = 0; i < activePets.Count; i++ ) {
+                    var action = System_Cache.Dispatch_BaseEnhance_ItemUpdateInventory[ activePets[ i ] ];
+                    if ( action != null ) {
+                        if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_UpdateInventory++;
+                        action( item, player );
                     }
-                    catch { }
+                }
 
                 return;
             default: return;

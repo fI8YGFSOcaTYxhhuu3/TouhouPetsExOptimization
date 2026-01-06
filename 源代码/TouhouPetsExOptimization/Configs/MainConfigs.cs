@@ -4,6 +4,7 @@ using Terraria.ModLoader.Config;
 namespace TouhouPetsExOptimization.Configs;
 
 
+
 public class MainConfigs : ModConfig {
 
     public enum 优化模式 {
@@ -29,5 +30,7 @@ public class MainConfigs : ModConfig {
 
     [DefaultValue( false )]
     public bool 性能监控;
+
+    public override void OnChanged() { MainConfigCache.Update(); }
 
 }

@@ -17,16 +17,15 @@ public class IL_TileDrawEffects : BaseHook {
 
     private ILHook _hook;
 
-    private delegate void TileDrawEffectsDelegate( int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData );
-
     public override void Load( Mod targetMod ) {
         Type type = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceTile" );
-        MethodInfo method = type?.GetMethod( "DrawEffects", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-
-        if ( method != null ) {
-            _hook = new ILHook( method, ManipulateIL );
-            _hook.Apply();
-        }
+        MethodInfo method = type?.GetMethod( "DrawEffects",
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+            null,
+            [ typeof( int ), typeof( int ), typeof( int ), typeof( SpriteBatch ), typeof( TileDrawInfo ).MakeByRefType() ],
+            null
+        );
+        if ( method != null ) { _hook = new ILHook( method, ManipulateIL ); _hook.Apply(); }
     }
 
     public override void Unload() { _hook?.Dispose(); _hook = null; }
@@ -35,14 +34,15 @@ public class IL_TileDrawEffects : BaseHook {
         ILCursor c = new ILCursor( il );
 
         c.Goto( 0 );
-        c.EmitDelegate<Action>( () => { if ( ModContent.GetInstance<MainConfigs>().性能监控 ) System_Counter.调用计数_GEnhanceTile_DrawEffects++; } );
+        c.EmitDelegate( () => { if ( MainConfigCache.性能监控 ) System_Counter.调用计数_GEnhanceTile_DrawEffects++; } );
 
         if ( !c.TryGotoNext( MoveType.Before, i => i.MatchCall( "TouhouPetsEx.Enhance.Core.GEnhanceTile", "ProcessDemonismAction" ) ) ) return;
 
         ILLabel labelRunOriginal = c.DefineLabel();
         ILLabel labelSkipOriginal = c.DefineLabel();
 
-        c.EmitDelegate<Func<bool>>( () => { return ModContent.GetInstance<MainConfigs>().优化模式_GEnhanceTile_DrawEffects == MainConfigs.优化模式.关闭补丁; } );
+        c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceTile_DrawEffects == MainConfigs.优化模式.关闭补丁; } );
+
         c.Emit( OpCodes.Brtrue, labelRunOriginal );
         c.Emit( OpCodes.Pop );
         c.Emit( OpCodes.Ldarg_1 );
@@ -50,28 +50,26 @@ public class IL_TileDrawEffects : BaseHook {
         c.Emit( OpCodes.Ldarg_3 );
         c.Emit( OpCodes.Ldarg_S, ( byte ) 4 );
         c.Emit( OpCodes.Ldarg_S, ( byte ) 5 );
-        c.EmitDelegate<TileDrawEffectsDelegate>( OptimizedDrawEffectsLoop );
+        c.EmitDelegate( OptimizedCode );
         c.Emit( OpCodes.Ret );
         c.MarkLabel( labelRunOriginal );
         c.Index++;
         c.MarkLabel( labelSkipOriginal );
     }
 
-    private static void OptimizedDrawEffectsLoop( int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData ) {
-        var config = ModContent.GetInstance<MainConfigs>();
-
-        switch ( config.优化模式_GEnhanceTile_DrawEffects ) {
+    private static void OptimizedCode( int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData ) {
+        switch ( MainConfigCache.优化模式_GEnhanceTile_DrawEffects ) {
             case MainConfigs.优化模式.暴力截断: return;
             case MainConfigs.优化模式.智能缓存:
-                if ( System_Cache.TileDrawEffects.Count == 0 ) return;
+                var activePets = System_State.LocalPlayerActivePets;
 
-                object[] args = [ i, j, type, spriteBatch, drawData ];
-                foreach ( var tuple in System_Cache.TileDrawEffects ) try {
-                        if ( config.性能监控 ) System_Counter.调用计数_BaseEnhance_TileDrawEffects++;
-                        tuple.Item2.Invoke( tuple.Item1, args );
+                for ( int k = 0; k < activePets.Count; k++ ) {
+                    var action = System_Cache.Dispatch_BaseEnhance_TileDrawEffects[ activePets[ k ] ];
+                    if ( action != null ) {
+                        if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_TileDrawEffects++;
+                        action( i, j, type, spriteBatch, ref drawData );
                     }
-                    catch { }
-                drawData = ( TileDrawInfo ) args[ 4 ];
+                }
 
                 return;
             default: return;

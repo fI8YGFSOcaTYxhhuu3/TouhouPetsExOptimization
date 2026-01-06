@@ -1,7 +1,9 @@
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
+using Terraria;
+using Terraria.DataStructures;
 using Terraria.ModLoader;
 
 namespace TouhouPetsExOptimization.Systems;
@@ -10,47 +12,52 @@ namespace TouhouPetsExOptimization.Systems;
 
 public static class System_Cache {
 
-    public static List<Tuple<object, MethodInfo>> TileDrawEffects = new();
-    public static List<Tuple<object, MethodInfo>> NpcAI = new();
-    public static List<Tuple<object, MethodInfo>> NpcPreAI = new();
-    public static List<Tuple<object, MethodInfo>> ItemUpdateInventory = new();
+    public delegate void Delegate_BaseEnhance_TileDrawEffects( int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData );
+    public delegate bool? Delegate_BaseEnhance_NPCPreAI( NPC npc );
+    public delegate void Delegate_BaseEnhance_NPCAI( NPC npc );
+    public delegate void Delegate_BaseEnhance_ItemUpdateInventory( Item item, Player player );
 
-    public static void Unload() { TileDrawEffects.Clear(); NpcAI.Clear(); NpcPreAI.Clear(); ItemUpdateInventory.Clear(); }
+    public static Delegate_BaseEnhance_ItemUpdateInventory[] Dispatch_BaseEnhance_ItemUpdateInventory;
+    public static Delegate_BaseEnhance_TileDrawEffects[] Dispatch_BaseEnhance_TileDrawEffects;
+    public static Delegate_BaseEnhance_NPCPreAI[] Dispatch_BaseEnhance_NPCPreAI;
+    public static Delegate_BaseEnhance_NPCAI[] Dispatch_BaseEnhance_NPCAI;
+
+    public static void Unload() { Dispatch_BaseEnhance_ItemUpdateInventory = null; Dispatch_BaseEnhance_TileDrawEffects = null; Dispatch_BaseEnhance_NPCPreAI = null; Dispatch_BaseEnhance_NPCAI = null; }
 
     public static void BuildCache() {
-        Unload();
+        Dispatch_BaseEnhance_ItemUpdateInventory = new Delegate_BaseEnhance_ItemUpdateInventory[ ItemLoader.ItemCount ];
+        Dispatch_BaseEnhance_TileDrawEffects = new Delegate_BaseEnhance_TileDrawEffects[ ItemLoader.ItemCount ];
+        Dispatch_BaseEnhance_NPCPreAI = new Delegate_BaseEnhance_NPCPreAI[ ItemLoader.ItemCount ];
+        Dispatch_BaseEnhance_NPCAI = new Delegate_BaseEnhance_NPCAI[ ItemLoader.ItemCount ];
 
-        if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod 模组 ) ) return;
+        if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod targetMod ) ) return;
 
-        Type 类型_TouhouPetsEx = 模组.Code.GetType( "TouhouPetsEx.TouhouPetsEx" );
-        Type 类型_BaseEnhance = 模组.Code.GetType( "TouhouPetsEx.Enhance.Core.BaseEnhance" );
+        Type baseEnhanceType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.BaseEnhance" );
+        Type mainType = targetMod.Code.GetType( "TouhouPetsEx.TouhouPetsEx" );
+        if ( baseEnhanceType == null || mainType == null ) return;
 
-        FieldInfo 字段_GEnhanceInstances = 类型_TouhouPetsEx?.GetField( "GEnhanceInstances", BindingFlags.Static | BindingFlags.Public );
-        if ( 字段_GEnhanceInstances == null ) return;
+        FieldInfo instancesField = mainType.GetField( "GEnhanceInstances", BindingFlags.Static | BindingFlags.Public );
+        if ( instancesField == null ) return;
 
-        object 对象_GEnhanceInstances = 字段_GEnhanceInstances.GetValue( null );
-        if ( 对象_GEnhanceInstances == null ) return;
+        IDictionary instances = instancesField.GetValue( null ) as IDictionary;
+        if ( instances == null ) return;
 
-        PropertyInfo 属性_Values = 对象_GEnhanceInstances.GetType().GetProperty( "Values" );
-        if ( 属性_Values == null ) return;
+        foreach ( DictionaryEntry entry in instances ) {
+            int itemId = ( int ) entry.Key;
+            object enhanceInstance = entry.Value;
+            Type instanceType = enhanceInstance.GetType();
 
-        var 宠物集合 = 属性_Values.GetValue( 对象_GEnhanceInstances ) as IEnumerable;
-        if ( 宠物集合 == null ) return;
-
-        foreach ( object 宠物 in 宠物集合 ) {
-            if ( 宠物 == null ) continue;
-            Type 宠物类型 = 宠物.GetType();
-
-            注册缓存( 宠物, 宠物类型, 类型_BaseEnhance, "TileDrawEffects", TileDrawEffects );
-            注册缓存( 宠物, 宠物类型, 类型_BaseEnhance, "NPCAI", NpcAI );
-            注册缓存( 宠物, 宠物类型, 类型_BaseEnhance, "NPCPreAI", NpcPreAI );
-            注册缓存( 宠物, 宠物类型, 类型_BaseEnhance, "ItemUpdateInventory", ItemUpdateInventory );
+            Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "TileDrawEffects", typeof( Delegate_BaseEnhance_TileDrawEffects ), Dispatch_BaseEnhance_TileDrawEffects );
+            Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "NPCPreAI", typeof( Delegate_BaseEnhance_NPCPreAI ), Dispatch_BaseEnhance_NPCPreAI );
+            Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "NPCAI", typeof( Delegate_BaseEnhance_NPCAI ), Dispatch_BaseEnhance_NPCAI );
+            Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "ItemUpdateInventory", typeof( Delegate_BaseEnhance_ItemUpdateInventory ), Dispatch_BaseEnhance_ItemUpdateInventory );
         }
     }
 
-    private static void 注册缓存( object 实例, Type 实例类型, Type 基类类型, string 方法名, List<Tuple<object, MethodInfo>> 缓存列表 ) {
-        MethodInfo 方法 = 实例类型.GetMethod( 方法名, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
-        if ( 方法 != null && 方法.DeclaringType != 基类类型 ) 缓存列表.Add( new Tuple<object, MethodInfo>( 实例, 方法 ) );
+    private static void Register( int itemId, object instance, Type instanceType, Type baseType, string methodName, Type delegateType, Array dispatchArray ) {
+        MethodInfo method = instanceType.GetMethod( methodName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic );
+        if ( method == null || method.DeclaringType == baseType ) return;
+        try { dispatchArray.SetValue( method.CreateDelegate( delegateType, instance ), itemId ); } catch {}
     }
 
 }

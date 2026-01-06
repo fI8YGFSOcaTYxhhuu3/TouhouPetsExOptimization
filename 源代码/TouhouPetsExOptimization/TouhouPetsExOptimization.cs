@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Terraria.ModLoader;
+using TouhouPetsExOptimization.Configs;
 using TouhouPetsExOptimization.Hooking;
 using TouhouPetsExOptimization.Hooking.IL;
 using TouhouPetsExOptimization.Systems;
@@ -13,11 +14,13 @@ public class TouhouPetsExOptimization : Mod {
     private List<BaseHook> _hooks = new();
 
     public override void Load() {
+        MainConfigCache.Update();
+
         if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod targetMod ) ) return;
 
         _hooks.Add( new IL_TileDrawEffects() );
-        _hooks.Add( new IL_NpcAI() );
         _hooks.Add( new IL_NpcPreAI() );
+        _hooks.Add( new IL_NpcAI() );
         _hooks.Add( new IL_ItemUpdateInventory() );
         _hooks.Add( new IL_Counters() );
 
