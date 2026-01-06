@@ -1,5 +1,5 @@
 Configs: {
-	TouhouPetsExOptimizationConfig: {
+	MainConfigs: {
 		DisplayName: 配置
 
 		Headers: {

@@ -1,72 +1,72 @@
 Configs: {
-	TouhouPetsExOptimizationConfig: {
-		DisplayName: Configuration
+	MainConfigs: {
+		DisplayName: 配置
 
 		Headers: {
-			优化模式: Optimization Mode
-			调试选项: Debug Options
+			优化模式: 优化模式
+			调试选项: 调试选项
 		}
 
 		优化模式_GEnhanceTile_DrawEffects: {
-			Label: Function - GEnhanceTile.DrawEffects
+			Label: 函数 - GEnhanceTile.DrawEffects
 			Tooltip:
 				'''
-				Optimization for the original mod's GEnhanceTile.DrawEffects.
-				Enabling this is expected to drastically improve performance, especially noticeable with more tiles on screen.
+				针对原模组 GEnhanceTile.DrawEffects 的优化。
+				启用后预计大幅改善性能，屏幕中物块越多越明显。
 
-				[c/FF0000:Original Defect:] 
-				The original mod iterates through all pet abilities to apply potential tile modification effects whenever the draw function is called for every single tile on the screen;
-				even if no pets are enabled, it iterates through all pet abilities for every block.
-				A new delegate closure object is created every time a block calls the draw function,
-				leading to tens of thousands of garbage objects generated per second, triggering frequent garbage collection and causing noticeable frame rate drops.
+				[c/FF0000:原版缺陷：] 
+				原模组通过在屏幕上每一个物块调用绘制函数时，遍历所有宠物能力来应用可能修改物块的效果；
+				即使没有启用任何宠物，也会对每个方块遍历全宠物能力。
+				每个方块调用绘制函数时会创建一个新的委托闭包对象，
+				这会导致每秒产生数万个垃圾对象，引发高频的垃圾回收，造成明显帧率下降。
 
-				At default zoom in 2K resolution, the draw area can contain up to 145*90=13050 non-empty blocks.
-				When locked at 60 FPS, each block calls the draw function 15 times per second, iterating and calling 59 pet abilities each time.
-				Thus, this ultimately results in 195,750 GEnhanceTile.DrawEffects calls and delegate object allocations per second,
-				and 11,549,250 BaseEnhance.TileDrawEffects calls, even if no pets are enabled.
+				在 2k 分辨率的默认缩放下，绘制范围内最高可包含 145*90=13050 个非空方块，
+				锁定 60 fps 时，每个方块每秒调用 15 次绘制函数，每次绘制遍历并调用 59 个宠物能力，
+				因此最终产生每秒 195750 次 GEnhanceTile.DrawEffects 调用和委托对象内存分配，
+				以及 11549250 次 BaseEnhance.TileDrawEffects 调用，即使什么宠物也没启用。
 				'''
 		}
 
 		优化模式_GEnhanceNPCs_PreAI_AI: {
-			Label: Function - GEnhanceNPCs.PreAI & AI
+			Label: 函数 - GEnhanceNPCs.PreAI & AI
 			Tooltip:
 				'''
-				Optimization for the original mod's GEnhanceNPCs.PreAI and AI.
-				Enabling this is expected to moderately improve performance, especially noticeable with more NPCs in the world.
+				针对原模组 GEnhanceNPCs.PreAI 和 AI 的优化。
+				启用后预计中幅改善性能，世界中 NPC 越多越明显。
 
-				[c/FF0000:Original Defect:] 
-				61 times per second, every NPC in the world unconditionally iterates through all pet ability instances when executing logic.
-				The system performs a full loop check regardless of whether the NPC needs effects applied or if corresponding pets are currently enabled.
-				Meanwhile, due to logic being encapsulated in lambda expressions, new delegate closure objects are allocated for every call on every NPC.
+				[c/FF0000:原版缺陷：] 
+				每秒 61 次，世界中的每个 NPC 执行 AI 逻辑时，都会无条件遍历所有宠物能力实例。
+				无论该 NPC 是否需要被应用效果，也无论当前是否启用了对应的宠物，系统都会进行完整的循环检查。
+				同时，由于使用了 lambda 表达式封装逻辑，每次对每个 NPC 的调用都会分配新的委托闭包对象。
 
-				If there are 100 active NPCs in the world,
-				this generates 100 * 61 = 6,100 GEnhanceNPCs.PreAI & AI calls and delegate object allocations per second,
-				and 100 * 61 * 59 = 359,900 BaseEnhance.PreAI & AI calls.
+				若世界中有 100 个活动 NPC，
+				每秒将产生 100 * 61 = 6100 次 GEnhanceNPCs.PreAI & AI 调用和委托对象内存分配，
+				以及 100 * 61 * 59 = 359900 次 BaseEnhance.PreAI & AI 调用。
 				'''
 		}
 
 		优化模式_GEnhanceItems_UpdateInventory: {
-			Label: Function - GEnhanceItems.UpdateInventory
+			Label: 函数 - GEnhanceItems.UpdateInventory
 			Tooltip:
 				'''
-				Optimization for the original mod's GEnhanceItems.UpdateInventory.
-				Enabling this is expected to slightly improve performance.
+				针对原模组 GEnhanceItems.UpdateInventory 的优化。
+				启用后预计略微改善性能。
 
-				[c/FF0000:Original Defect:] 
-				61 times per second, every non-empty item slot (including ammo, coins, etc.) in the player's inventory iterates through all pet abilities.
-				Due to the same delegate closure mechanism, this causes a small amount of garbage objects to be generated per second for every item in the inventory.
+				[c/FF0000:原版缺陷：] 
+				每秒 61 次，玩家背包中的每个非空物品槽（包括弹药、钱币等）会遍历所有宠物能力。
+				同样因为委托闭包机制，导致每秒为背包中的每个物品产生少量垃圾对象。
 
-				If the player has 50 items in their inventory,
-				this generates 50 * 61 = 3,050 GEnhanceItems.UpdateInventory calls and memory allocations per second,
-				and 50 * 61 * 59 = 179,950 BaseEnhance.UpdateInventory calls.
+				若玩家背包中有 50 个物品，
+				每秒将产生 50 * 61 = 3050 次 GEnhanceItems.UpdateInventory 调用与内存分配，
+				以及 50 * 61 * 59 = 179950 次 BaseEnhance.UpdateInventory 调用。
 
-				The BaseEnhance.UpdateInventory call count in the Performance Monitor will generally be higher than the count generated here.
+				性能监控中的 BaseEnhance.UpdateInventory 调用次数一般会高于此处产生的调用次数。
 				'''
 		}
 
 		性能监控: {
-			Label: Performance Monitor
-			Tooltip: Displays the performance monitoring panel, showing call counts for various functions.
+			Label: 性能监控
+			Tooltip: 显示性能监控面板，其中显示各函数的调用次数。
 		}
 	}
 
@@ -74,38 +74,38 @@ Configs: {
 		Tooltip: ""
 
 		关闭补丁: {
-			Label: Disable Patch
+			Label: 关闭补丁
 			Tooltip:
 				'''
-				[Disables this patch, uses original logic]
+				[关闭此补丁，使用原版逻辑]
 
-				Completely reverts to the original mod's logic with no interception or optimization.
-				Performance in this mode will be identical to the original mod.
+				完全回退到原模组的逻辑，不进行任何拦截或优化。
+				此模式下性能表现将与原模组一致。
 				'''
 		}
 
 		智能缓存: {
-			Label: Smart Cache
+			Label: 智能缓存
 			Tooltip:
 				'''
-				[Retains original features, significantly boosts performance]
+				[保留原有功能，大幅提升性能]
 
-				Registers all actually effective pets during mod loading,
-				and only calls pet code that explicitly overrides the corresponding logic at runtime, skipping all unimplemented empty logic.
-				Also removes the delegate allocation from the original version, completely eliminating the resulting GC memory pressure.
-				This is the most recommended mode, as it resolves stuttering without losing any special effects (e.g., tile glow, NPC special AI).
+				在模组加载时注册所有实际有效的宠物，
+				运行时只调用真正重写了对应逻辑的宠物代码，跳过所有未实现的空逻辑。
+				同时移除了原版中的委托分配，彻底消除了由此产生的 GC 内存压力。
+				这是最推荐的模式，既不丢失任何特效（如物块发光、NPC特殊AI），又能解决卡顿。
 				'''
 		}
 
 		暴力截断: {
-			Label: Force Cutoff
+			Label: 暴力截断
 			Tooltip:
 				'''
-				[Disables original features, achieves maximum frame rate]
+				[禁用原有功能，获得极限帧率]
 
-				Directly prevents the original mod's related code from running without performing any checks.
-				This means related special effects or logic will completely fail (e.g., blocks affected by pets will no longer glow, NPCs will no longer be affected by special pet buffs).
-				Only recommended when no pets with corresponding abilities are summoned (e.g., at the time of making this patch, only Koakuma in the original mod affects book tiles).
+				直接阻止原模组相关代码的运行，不执行任何检查。
+				这意味着相关的特效或逻辑将完全失效（例如受宠物影响的物块不再发光、NPC不再受宠物特殊Buff影响）。
+				仅建议在未召唤具有对应能力的宠物时启用（例如，本补丁制作时，原模组中仅有小恶魔会影响书籍图块）。
 				'''
 		}
 	}
