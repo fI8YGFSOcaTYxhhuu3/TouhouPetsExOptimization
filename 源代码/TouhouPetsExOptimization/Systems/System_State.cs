@@ -18,11 +18,11 @@ public class System_State : ModSystem {
     private static FieldInfo _fieldActivePassiveEnhance;
     private static bool _reflectionReady = false;
 
-    private const int UPDATE_INTERVAL = 30; 
+    private const int UPDATE_INTERVAL = 60; 
     private static int _updateTimer = 0;
 
     public override void Load() {
-        LocalPlayerActivePets = new List<int>( 128 );
+        LocalPlayerActivePets = new List<int>( 64 );
 
         if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod targetMod ) ) return;
 

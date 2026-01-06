@@ -26,6 +26,7 @@ public class IL_TileDrawEffects : BaseHook {
             null
         );
         if ( method != null ) { _hook = new ILHook( method, ManipulateIL ); _hook.Apply(); }
+
     }
 
     public override void Unload() { _hook?.Dispose(); _hook = null; }
@@ -36,15 +37,12 @@ public class IL_TileDrawEffects : BaseHook {
         c.Goto( 0 );
         c.EmitDelegate( () => { if ( MainConfigCache.性能监控 ) System_Counter.调用计数_GEnhanceTile_DrawEffects++; } );
 
-        if ( !c.TryGotoNext( MoveType.Before, i => i.MatchCall( "TouhouPetsEx.Enhance.Core.GEnhanceTile", "ProcessDemonismAction" ) ) ) return;
+        if ( !c.TryGotoNext( MoveType.Before, i => i.MatchLdsfld( "TouhouPetsEx.Enhance.Core.EnhanceHookRegistry", "TileDrawEffects" ) ) ) return;
 
         ILLabel labelRunOriginal = c.DefineLabel();
-        ILLabel labelSkipOriginal = c.DefineLabel();
 
         c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceTile_DrawEffects == MainConfigs.优化模式.关闭补丁; } );
-
         c.Emit( OpCodes.Brtrue, labelRunOriginal );
-        c.Emit( OpCodes.Pop );
         c.Emit( OpCodes.Ldarg_1 );
         c.Emit( OpCodes.Ldarg_2 );
         c.Emit( OpCodes.Ldarg_3 );
@@ -53,8 +51,6 @@ public class IL_TileDrawEffects : BaseHook {
         c.EmitDelegate( OptimizedCode );
         c.Emit( OpCodes.Ret );
         c.MarkLabel( labelRunOriginal );
-        c.Index++;
-        c.MarkLabel( labelSkipOriginal );
     }
 
     private static void OptimizedCode( int i, int j, int type, SpriteBatch spriteBatch, ref TileDrawInfo drawData ) {
