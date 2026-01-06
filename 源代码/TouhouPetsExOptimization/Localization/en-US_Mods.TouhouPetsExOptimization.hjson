@@ -14,7 +14,7 @@ Configs: {
 				针对原模组 GEnhanceTile.DrawEffects 的优化。
 				启用后预计大幅改善性能，屏幕中物块越多越明显。
 
-				[c/FF0000:原版缺陷：]
+				[c/FF0000:旧版缺陷：]
 				原模组通过在屏幕上每一个物块调用绘制函数时，遍历所有宠物能力来应用可能修改物块的效果；
 				即使没有启用任何宠物，也会对每个方块遍历全宠物能力。
 				每个方块调用绘制函数时会创建一个新的委托闭包对象，
@@ -27,22 +27,32 @@ Configs: {
 				'''
 		}
 
-		优化模式_GEnhanceNPCs_PreAI_AI: {
-			Label: 函数 - GEnhanceNPCs.PreAI & AI
+		优化模式_GEnhanceNPCs_AI: {
+			Label: 函数 - GEnhanceNPCs.AI
 			Tooltip:
 				'''
-				针对原模组 GEnhanceNPCs.PreAI 和 AI 的优化。
+				针对原模组 GEnhanceNPCs.AI 的优化。
 				启用后预计中幅改善性能，世界中 NPC 越多越明显。
 
-				[c/FF0000:原版缺陷：]
+				[c/FF0000:旧版缺陷：]
 				每秒 61 次，世界中的每个 NPC 执行 AI 逻辑时，都会无条件遍历所有宠物能力实例。
 				无论该 NPC 是否需要被应用效果，也无论当前是否启用了对应的宠物，系统都会进行完整的循环检查。
 				同时，由于使用了 lambda 表达式封装逻辑，每次对每个 NPC 的调用都会分配新的委托闭包对象。
 
 				若世界中有 100 个活动 NPC，
-				每秒将产生 100 * 61 = 6100 次 GEnhanceNPCs.PreAI & AI 调用和委托对象内存分配，
-				以及 100 * 61 * 59 = 359900 次 BaseEnhance.PreAI & AI 调用。
+				每秒将产生 100 * 61 = 6100 次 GEnhanceNPCs.AI 调用和委托对象内存分配，
+				以及 100 * 61 * 59 = 359900 次 BaseEnhance.NPCAI 调用。
 				'''
+		}
+
+		优化模式_GEnhanceNPCs_PreAI: {
+			Label: 函数 - GEnhanceNPCs.PreAI
+			Tooltip: ""
+		}
+
+		优化模式_GEnhanceItems_PostDrawInInventory: {
+			Label: 函数 - GEnhanceItems.PostDrawInInventory
+			Tooltip: ""
 		}
 
 		优化模式_GEnhanceItems_UpdateInventory: {
@@ -52,15 +62,13 @@ Configs: {
 				针对原模组 GEnhanceItems.UpdateInventory 的优化。
 				启用后预计略微改善性能。
 
-				[c/FF0000:原版缺陷：]
+				[c/FF0000:旧版缺陷：]
 				每秒 61 次，玩家背包中的每个非空物品槽（包括弹药、钱币等）会遍历所有宠物能力。
 				同样因为委托闭包机制，导致每秒为背包中的每个物品产生少量垃圾对象。
 
 				若玩家背包中有 50 个物品，
 				每秒将产生 50 * 61 = 3050 次 GEnhanceItems.UpdateInventory 调用与内存分配，
-				以及 50 * 61 * 59 = 179950 次 BaseEnhance.UpdateInventory 调用。
-
-				性能监控中的 BaseEnhance.UpdateInventory 调用次数一般会高于此处产生的调用次数。
+				以及 50 * 61 * 59 = 179950 次 BaseEnhance.ItemUpdateInventory 调用。
 				'''
 		}
 

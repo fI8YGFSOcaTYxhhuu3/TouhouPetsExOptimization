@@ -18,10 +18,11 @@ public class TouhouPetsExOptimization : Mod {
 
         if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod targetMod ) ) return;
 
-        _hooks.Add( new IL_TileDrawEffects() );
-        _hooks.Add( new IL_NpcPreAI() );
-        _hooks.Add( new IL_NpcAI() );
-        _hooks.Add( new IL_ItemUpdateInventory() );
+        _hooks.Add( new IL_GEnhanceTile_DrawEffects() );
+        _hooks.Add( new IL_GEnhanceNPCs_PreAI() );
+        _hooks.Add( new IL_GEnhanceNPCs_AI() );
+        _hooks.Add( new IL_GEnhanceItems_PostDrawInInventory() );
+        _hooks.Add( new IL_GEnhanceItems_UpdateInventory() );
         _hooks.Add( new IL_Counters() );
 
         foreach ( var hook in _hooks ) hook.Load( targetMod );

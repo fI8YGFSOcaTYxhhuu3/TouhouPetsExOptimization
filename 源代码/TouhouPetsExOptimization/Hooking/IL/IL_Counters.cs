@@ -24,29 +24,22 @@ public class IL_Counters : BaseHook {
         Type baseEnhance = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.BaseEnhance" );
         if ( baseEnhance == null ) return;
 
+        Type actionType = typeof( Action<> ).MakeGenericType( baseEnhance );
         Type tileType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceTile" );
+        Type npcType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceNPCs" );
+        Type itemType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceItems" );
 
-        MethodInfo mTileDraw = tileType?.GetMethod( "DrawEffects",
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-            null,
-            [ typeof( int ), typeof( int ), typeof( int ), typeof( SpriteBatch ), typeof( TileDrawInfo ).MakeByRefType() ],
-            null
-        );
-
+        MethodInfo mTileDraw = tileType?.GetMethod( "DrawEffects", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( int ), typeof( int ), typeof( int ), typeof( SpriteBatch ), typeof( TileDrawInfo ).MakeByRefType() ], null );
         if ( mTileDraw != null ) { _ilTile = new ILHook( mTileDraw, il => InjectMethodCallCounter( il, "TileDrawEffects", "调用计数_BaseEnhance_TileDrawEffects" ) ); _ilTile.Apply(); }
 
-        Type npcType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceNPCs" );
+        MethodInfo mNpcAI = npcType?.GetMethod( "AI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( NPC ) ], null );
+        if ( mNpcAI != null ) { _ilNpcAI = new ILHook( mNpcAI, il => InjectMethodCallCounter( il, "NPCAI", "调用计数_BaseEnhance_NPCAI" ) ); _ilNpcAI.Apply(); }
 
         MethodInfo mNpcPreAI = npcType?.GetMethod( "PreAI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( NPC ) ], null );
-        if ( mNpcPreAI != null ) { _ilNpcPreAI = new ILHook( mNpcPreAI, il => InjectMethodCallCounter( il, "NPCPreAI", "调用计数_BaseEnhance_PreAI_AI" ) ); _ilNpcPreAI.Apply(); }
+        if ( mNpcPreAI != null ) { _ilNpcPreAI = new ILHook( mNpcPreAI, il => InjectMethodCallCounter( il, "NPCPreAI", "调用计数_BaseEnhance_NPCPreAI" ) ); _ilNpcPreAI.Apply(); }
 
-        MethodInfo mNpcAI = npcType?.GetMethod( "AI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( NPC ) ], null );
-        if ( mNpcAI != null ) { _ilNpcAI = new ILHook( mNpcAI, il => InjectMethodCallCounter( il, "NPCAI", "调用计数_BaseEnhance_PreAI_AI" ) ); _ilNpcAI.Apply(); }
-
-        Type itemType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceItems" );
-        Type actionType = typeof( Action<> ).MakeGenericType( baseEnhance );
         MethodInfo mItem = itemType?.GetMethod( "ProcessDemonismAction", BindingFlags.Static | BindingFlags.NonPublic, null, [ actionType ], null );
-        if ( mItem != null ) { _ilItem = new ILHook( mItem, il => InjectDelegateInvokeCounter( il, "调用计数_BaseEnhance_UpdateInventory" ) ); _ilItem.Apply(); }
+        if ( mItem != null ) { _ilItem = new ILHook( mItem, il => InjectDelegateInvokeCounter( il, "调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory" ) ); _ilItem.Apply(); }
     }
 
     public override void Unload() { _ilTile?.Dispose(); _ilTile = null; _ilNpcAI?.Dispose(); _ilNpcAI = null; _ilNpcPreAI?.Dispose(); _ilNpcPreAI = null; _ilItem?.Dispose(); _ilItem = null; }

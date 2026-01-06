@@ -22,10 +22,16 @@ public class MainConfigs : ModConfig {
     public 优化模式 优化模式_GEnhanceTile_DrawEffects;
 
     [DefaultValue( 优化模式.智能缓存 )]
-    public 优化模式 优化模式_GEnhanceNPCs_PreAI_AI;
+    public 优化模式 优化模式_GEnhanceNPCs_AI;
+
+    [DefaultValue( 优化模式.智能缓存 )]
+    public 优化模式 优化模式_GEnhanceNPCs_PreAI;
 
     [DefaultValue( 优化模式.智能缓存 )]
     public 优化模式 优化模式_GEnhanceItems_UpdateInventory;
+
+    [DefaultValue( 优化模式.智能缓存 )]
+    public 优化模式 优化模式_GEnhanceItems_PostDrawInInventory;
 
     [Header( "调试选项" )]
 

@@ -13,20 +13,14 @@ namespace TouhouPetsExOptimization.Hooking.IL;
 
 
 
-public class IL_TileDrawEffects : BaseHook {
+public class IL_GEnhanceTile_DrawEffects : BaseHook {
 
     private ILHook _hook;
 
     public override void Load( Mod targetMod ) {
         Type type = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceTile" );
-        MethodInfo method = type?.GetMethod( "DrawEffects",
-            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-            null,
-            [ typeof( int ), typeof( int ), typeof( int ), typeof( SpriteBatch ), typeof( TileDrawInfo ).MakeByRefType() ],
-            null
-        );
+        MethodInfo method = type?.GetMethod( "DrawEffects", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( int ), typeof( int ), typeof( int ), typeof( SpriteBatch ), typeof( TileDrawInfo ).MakeByRefType() ], null );
         if ( method != null ) { _hook = new ILHook( method, ManipulateIL ); _hook.Apply(); }
-
     }
 
     public override void Unload() { _hook?.Dispose(); _hook = null; }
