@@ -17,20 +17,37 @@ public class IL_GEnhanceNPCs_PreAI : BaseHook {
     private ILHook _hook;
 
     public override void Load( Mod targetMod ) {
+        var logger = ModContent.GetInstance<TouhouPetsExOptimization>().Logger;
+
         Type type = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceNPCs" );
-        MethodInfo method = type?.GetMethod( "PreAI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( NPC ) ], null );
-        if ( method != null ) { _hook = new ILHook( method, ManipulateIL ); _hook.Apply(); }
+        if ( type == null ) {
+            logger.Warn( "[IL_GEnhanceNPCs_PreAI] 警告：未找到类 TouhouPetsEx.Enhance.Core.GEnhanceNPCs" );
+            return;
+        }
+
+        MethodInfo method = type.GetMethod( "PreAI", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( NPC ) ], null );
+        if ( method != null ) { 
+            _hook = new ILHook( method, ManipulateIL ); 
+            _hook.Apply(); 
+        }
+        else {
+            logger.Warn( "[IL_GEnhanceNPCs_PreAI] 警告：未找到方法 GEnhanceNPCs.PreAI" );
+        }
     }
 
     public override void Unload() { _hook?.Dispose(); _hook = null; }
 
     private void ManipulateIL( ILContext il ) {
         ILCursor c = new ILCursor( il );
+        var logger = ModContent.GetInstance<TouhouPetsExOptimization>().Logger;
 
         c.Goto( 0 );
         c.EmitDelegate( () => { if ( MainConfigCache.性能监控 ) System_Counter.调用计数_GEnhanceNPCs_PreAI++; } );
 
-        if ( !c.TryGotoNext( MoveType.Before, i => i.MatchLdsfld( "TouhouPetsEx.Enhance.Core.EnhanceHookRegistry", "NPCPreAI" ) ) ) return;
+        if ( !c.TryGotoNext( MoveType.Before, i => i.MatchLdsfld( "TouhouPetsEx.Enhance.Core.EnhanceHookRegistry", "NPCPreAI" ) ) ) {
+            logger.Warn( $"[IL_GEnhanceNPCs_PreAI] 警告：在 {il.Method.Name} 中未找到对 EnhanceHookRegistry.NPCPreAI 的字段读取。优化注入失败，原模组逻辑可能已变更。" );
+            return;
+        }
 
         ILLabel labelRunOriginal = c.DefineLabel();
 

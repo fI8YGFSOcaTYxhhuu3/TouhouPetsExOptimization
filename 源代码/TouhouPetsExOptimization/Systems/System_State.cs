@@ -38,21 +38,40 @@ public class System_State : ModSystem {
             Mod.Logger.Warn( "[System_State] 未找到前置模组 TouhouPetsEx，优化系统将暂停工作。" );
             return;
         }
-
+		
         try {
             Type registryType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.EnhanceRegistry" );
-            if ( registryType != null ) {
+            
+            if ( registryType == null ) {
+                Mod.Logger.Warn( "[System_State] 警告：未找到类 TouhouPetsEx.Enhance.Core.EnhanceRegistry" );
+            }
+            else {
                 PropertyInfo allEnhancesProp = registryType.GetProperty( "AllEnhancements", BindingFlags.Static | BindingFlags.Public );
                 MethodInfo getBoundItemsMethod = registryType.GetMethod( "GetBoundItemTypes", BindingFlags.Static | BindingFlags.Public );
 
+                if ( allEnhancesProp == null ) Mod.Logger.Warn( "[System_State] 警告：未找到属性 EnhanceRegistry.AllEnhancements" );
+                if ( getBoundItemsMethod == null ) Mod.Logger.Warn( "[System_State] 警告：未找到方法 EnhanceRegistry.GetBoundItemTypes" );
+
                 if ( allEnhancesProp != null && getBoundItemsMethod != null ) {
                     IEnumerable allEnhances = allEnhancesProp.GetValue( null ) as IEnumerable;
-                    if ( allEnhances != null ) {
+                    
+                    if ( allEnhances == null ) {
+                         Mod.Logger.Warn( "[System_State] 警告：EnhanceRegistry.AllEnhancements 返回了 null" );
+                    }
+                    else {
+                        bool idPropNotFoundLogged = false;
+
                         foreach ( object enhanceObj in allEnhances ) {
                             if ( enhanceObj == null ) continue;
 
                             PropertyInfo idProp = enhanceObj.GetType().GetProperty( "EnhanceId", BindingFlags.Instance | BindingFlags.Public );
-                            if ( idProp == null ) continue;
+                            if ( idProp == null ) {
+                                if ( !idPropNotFoundLogged ) {
+                                    Mod.Logger.Warn( $"[System_State] 警告：在增强实例 {enhanceObj.GetType().Name} 中未找到属性 EnhanceId" );
+                                    idPropNotFoundLogged = true;
+                                }
+                                continue;
+                            }
 
                             object enhanceIdStruct = idProp.GetValue( enhanceObj );
 
@@ -86,15 +105,25 @@ public class System_State : ModSystem {
 
         try {
             Type enhancePlayersType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.EnhancePlayers" );
-            if ( enhancePlayersType != null ) {
+            
+            if ( enhancePlayersType == null ) {
+                Mod.Logger.Warn( "[System_State] 警告：未找到类 TouhouPetsEx.Enhance.Core.EnhancePlayers" );
+            }
+            else {
                 _fieldActiveEnhance = enhancePlayersType.GetField( "ActiveEnhance", BindingFlags.Instance | BindingFlags.Public );
                 _fieldActivePassiveEnhance = enhancePlayersType.GetField( "ActivePassiveEnhance", BindingFlags.Instance | BindingFlags.Public );
+
+                if ( _fieldActiveEnhance == null ) Mod.Logger.Warn( "[System_State] 警告：未找到字段 EnhancePlayers.ActiveEnhance" );
+                if ( _fieldActivePassiveEnhance == null ) Mod.Logger.Warn( "[System_State] 警告：未找到字段 EnhancePlayers.ActivePassiveEnhance" );
 
                 if ( targetMod.TryFind( "EnhancePlayers", out ModPlayer mp ) ) {
                     _prototypeEnhancePlayer = mp;
                     if ( _fieldActiveEnhance != null && _fieldActivePassiveEnhance != null ) {
                         System_PatchState.IsActivePetListReaderWorking = true;
                     }
+                }
+                else {
+                    Mod.Logger.Warn( "[System_State] 警告：未找到 ModPlayer 实例 TouhouPetsEx.EnhancePlayers" );
                 }
             }
         }
@@ -106,8 +135,6 @@ public class System_State : ModSystem {
         if ( !System_PatchState.IsSafeToOptimize ) {
             Mod.Logger.Warn( $"[System_State] 初始化未完全成功 (IDMap: {System_PatchState.IsIdMappingWorking}, Reader: {System_PatchState.IsActivePetListReaderWorking})。优化功能将自动禁用。" );
         }
-
-        System_Cache.BuildCache();
     }
 
     public override void Unload() {

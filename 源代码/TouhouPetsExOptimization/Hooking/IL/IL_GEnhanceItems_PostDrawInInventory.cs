@@ -19,20 +19,38 @@ public class IL_GEnhanceItems_PostDrawInInventory : BaseHook {
     private ILHook _hook;
 
     public override void Load( Mod targetMod ) {
+        var logger = ModContent.GetInstance<TouhouPetsExOptimization>().Logger;
+
         Type type = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.GEnhanceItems" );
-        MethodInfo method = type?.GetMethod( "PostDrawInInventory", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( Item ), typeof( SpriteBatch ), typeof( Vector2 ), typeof( Rectangle ), typeof( Color ), typeof( Color ), typeof( Vector2 ), typeof( float ) ], null );
-        if ( method != null ) { _hook = new ILHook( method, ManipulateIL ); _hook.Apply(); }
+        if ( type == null ) {
+            logger.Error( "[IL_GEnhanceItems_PostDrawInInventory] 致命错误：未找到类 TouhouPetsEx.Enhance.Core.GEnhanceItems，优化将跳过。" );
+            return;
+        }
+
+        MethodInfo method = type.GetMethod( "PostDrawInInventory", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, [ typeof( Item ), typeof( SpriteBatch ), typeof( Vector2 ), typeof( Rectangle ), typeof( Color ), typeof( Color ), typeof( Vector2 ), typeof( float ) ], null );
+        
+        if ( method != null ) { 
+            _hook = new ILHook( method, ManipulateIL ); 
+            _hook.Apply(); 
+        }
+        else {
+            logger.Warn( "[IL_GEnhanceItems_PostDrawInInventory] 警告：未找到方法 GEnhanceItems.PostDrawInInventory" );
+        }
     }
 
     public override void Unload() { _hook?.Dispose(); _hook = null; }
 
     private void ManipulateIL( ILContext il ) {
         ILCursor c = new ILCursor( il );
+        var logger = ModContent.GetInstance<TouhouPetsExOptimization>().Logger;
 
         c.Goto( 0 );
         c.EmitDelegate( () => { if ( MainConfigCache.性能监控 ) System_Counter.调用计数_GEnhanceItems_PostDrawInInventory++; } );
 
-        if ( !c.TryGotoNext( MoveType.Before, i => i.MatchCall( "TouhouPetsEx.Enhance.Core.GEnhanceItems", "ProcessDemonismAction" ) ) ) return;
+        if ( !c.TryGotoNext( MoveType.Before, i => i.MatchCall( "TouhouPetsEx.Enhance.Core.GEnhanceItems", "ProcessDemonismAction" ) ) ) {
+            logger.Warn( $"[IL_GEnhanceItems_PostDrawInInventory] 警告：在 {il.Method.Name} 中未找到目标调用 ProcessDemonismAction，优化注入失败。可能是原模组逻辑发生了变更。" );
+            return;
+        }
 
         ILLabel labelRunOriginal = c.DefineLabel();
 

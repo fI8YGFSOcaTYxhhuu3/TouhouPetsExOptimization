@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using Terraria;
 using Terraria.DataStructures;
@@ -45,49 +46,70 @@ public static class System_Cache {
             Dispatch_BaseEnhance_ItemUpdateInventory = new Delegate_BaseEnhance_ItemUpdateInventory[ ItemLoader.ItemCount ];
 
             if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod targetMod ) ) {
-                logger.Warn( "[System_Cache] 优化中止：未找到模组 TouhouPetsEx。" );
+                logger.Error( "[System_Cache] 致命错误：未找到模组 TouhouPetsEx，缓存构建中止。" );
                 return;
             }
 
             Type baseEnhanceType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.BaseEnhance" );
-            Type mainType = targetMod.Code.GetType( "TouhouPetsEx.TouhouPetsEx" );
+            Type registryType = targetMod.Code.GetType( "TouhouPetsEx.Enhance.Core.EnhanceRegistry" );
 
             if ( baseEnhanceType == null ) {
-                logger.Warn( "[System_Cache] 优化中止：未找到类 TouhouPetsEx.Enhance.Core.BaseEnhance。" );
+                logger.Error( "[System_Cache] 致命错误：未找到类 TouhouPetsEx.Enhance.Core.BaseEnhance。" );
                 return;
             }
-            if ( mainType == null ) {
-                logger.Warn( "[System_Cache] 优化中止：未找到主类 TouhouPetsEx.TouhouPetsEx。" );
-                return;
-            }
-
-            FieldInfo instancesField = mainType.GetField( "GEnhanceInstances", BindingFlags.Static | BindingFlags.Public );
-            if ( instancesField == null ) {
-                logger.Warn( "[System_Cache] 优化中止：未找到字段 GEnhanceInstances。" );
+            if ( registryType == null ) {
+                logger.Error( "[System_Cache] 致命错误：未找到类 TouhouPetsEx.Enhance.Core.EnhanceRegistry。" );
                 return;
             }
 
-            IDictionary instances = instancesField.GetValue( null ) as IDictionary;
-            if ( instances == null ) {
-                logger.Warn( "[System_Cache] 优化中止：GEnhanceInstances 字段值为 null。" );
+            PropertyInfo allEnhancementsProp = registryType.GetProperty( "AllEnhancements", BindingFlags.Static | BindingFlags.Public );
+            MethodInfo getBoundItemsMethod = registryType.GetMethod( "GetBoundItemTypes", BindingFlags.Static | BindingFlags.Public );
+            PropertyInfo enhanceIdProp = baseEnhanceType.GetProperty( "EnhanceId", BindingFlags.Instance | BindingFlags.Public );
+
+            if ( allEnhancementsProp == null ) logger.Error( "[System_Cache] 致命错误：未找到属性 EnhanceRegistry.AllEnhancements。" );
+            if ( getBoundItemsMethod == null ) logger.Error( "[System_Cache] 致命错误：未找到方法 EnhanceRegistry.GetBoundItemTypes。" );
+            if ( enhanceIdProp == null ) logger.Error( "[System_Cache] 致命错误：未找到属性 BaseEnhance.EnhanceId。" );
+
+            if ( allEnhancementsProp == null || getBoundItemsMethod == null || enhanceIdProp == null ) return;
+
+            IEnumerable enhancements = allEnhancementsProp.GetValue( null ) as IEnumerable;
+            if ( enhancements == null ) {
+                logger.Warn( "[System_Cache] 警告：EnhanceRegistry.AllEnhancements 返回 null，无法构建缓存。" );
                 return;
             }
 
-            foreach ( DictionaryEntry entry in instances ) {
-                if ( entry.Key is int itemId && entry.Value != null ) {
-                    object enhanceInstance = entry.Value;
-                    Type instanceType = enhanceInstance.GetType();
+            int count = 0;
+            foreach ( object enhanceInstance in enhancements ) {
+                if ( enhanceInstance == null ) continue;
+
+                object id = enhanceIdProp.GetValue( enhanceInstance );
+                if ( id == null ) continue;
+
+                IEnumerable<int> boundItems = getBoundItemsMethod.Invoke( null, new object[] { id } ) as IEnumerable<int>;
+                if ( boundItems == null ) continue;
+
+                Type instanceType = enhanceInstance.GetType();
+
+                foreach ( int itemId in boundItems ) {
+                    if ( itemId < 0 || itemId >= ItemLoader.ItemCount ) continue;
 
                     Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "TileDrawEffects", typeof( Delegate_BaseEnhance_TileDrawEffects ), Dispatch_BaseEnhance_TileDrawEffects, logger );
                     Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "NPCAI", typeof( Delegate_BaseEnhance_NPCAI ), Dispatch_BaseEnhance_NPCAI, logger );
                     Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "NPCPreAI", typeof( Delegate_BaseEnhance_NPCPreAI ), Dispatch_BaseEnhance_NPCPreAI, logger );
                     Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "ItemPostDrawInInventory", typeof( Delegate_BaseEnhance_ItemPostDrawInInventory ), Dispatch_BaseEnhance_ItemPostDrawInInventory, logger );
                     Register( itemId, enhanceInstance, instanceType, baseEnhanceType, "ItemUpdateInventory", typeof( Delegate_BaseEnhance_ItemUpdateInventory ), Dispatch_BaseEnhance_ItemUpdateInventory, logger );
+                    
+                    count++;
                 }
             }
 
-            System_PatchState.IsCacheBuilt = true;
-            logger.Info( "[System_Cache] 智能缓存构建成功。" );
+            if ( count == 0 ) {
+                logger.Warn( "[System_Cache] 警告：虽然获取到了增强列表，但未建立任何物品绑定 (Count=0)。原模组可能尚未初始化完毕。" );
+            }
+            else {
+                System_PatchState.IsCacheBuilt = true;
+                logger.Info( $"[System_Cache] 智能缓存构建成功，共索引 {count} 个绑定条目。" );
+            }
         }
         catch ( Exception e ) {
             System_PatchState.IsCacheBuilt = false;
