@@ -69,13 +69,31 @@ public class IL_GEnhanceItems_UpdateInventory : BaseHook {
         switch ( MainConfigCache.优化模式_GEnhanceItems_UpdateInventory ) {
             case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
-                var activePets = System_State.LocalPlayerActivePets;
+                var activeIndices = System_State.ActiveEnhanceIndices;
+                var actions = System_Cache.Actions_BaseEnhance_ItemUpdateInventory;
+                var itemMap = System_Cache.ItemToEnhanceIndex;
 
-                for ( int i = 0; i < activePets.Count; i++ ) {
-                    var action = System_Cache.Dispatch_BaseEnhance_ItemUpdateInventory[ activePets[ i ] ];
+                int selfIndex = -1;
+                if ( item.type >= 0 && item.type < itemMap.Length ) {
+                    selfIndex = itemMap[ item.type ];
+                }
+                int count = activeIndices.Count;
+                for ( int i = 0; i < count; i++ ) {
+                    int index = activeIndices[ i ];
+                    var action = actions[ index ];
+                    
                     if ( action != null ) {
                         if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;
                         action( item, player );
+                        if ( index == selfIndex ) selfIndex = -1;
+                    }
+                }
+
+                if ( selfIndex != -1 ) {
+                    var selfAction = actions[ selfIndex ];
+                    if ( selfAction != null ) {
+                        if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;
+                        selfAction( item, player );
                     }
                 }
 

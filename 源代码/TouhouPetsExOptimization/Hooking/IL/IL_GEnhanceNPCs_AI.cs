@@ -63,10 +63,12 @@ public class IL_GEnhanceNPCs_AI : BaseHook {
         switch ( MainConfigCache.优化模式_GEnhanceNPCs_AI ) {
             case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
-                var activePets = System_State.LocalPlayerActivePets;
+                var activeIndices = System_State.ActiveEnhanceIndices;
+                var actions = System_Cache.Actions_BaseEnhance_NPCAI;
 
-                for ( int i = 0; i < activePets.Count; i++ ) {
-                    var action = System_Cache.Dispatch_BaseEnhance_NPCAI[ activePets[ i ] ];
+                int count = activeIndices.Count;
+                for ( int i = 0; i < count; i++ ) {
+                    var action = actions[ activeIndices[ i ] ];
                     if ( action != null ) {
                         if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_NPCAI++;
                         action( npc );

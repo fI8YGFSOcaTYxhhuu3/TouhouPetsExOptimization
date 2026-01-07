@@ -68,10 +68,14 @@ public class IL_GEnhanceTile_DrawEffects : BaseHook {
         switch ( MainConfigCache.优化模式_GEnhanceTile_DrawEffects ) {
             case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
-                var activePets = System_State.LocalPlayerActivePets;
+                var activeIndices = System_State.ActiveEnhanceIndices;
+                var actions = System_Cache.Actions_BaseEnhance_TileDrawEffects;
 
-                for ( int k = 0; k < activePets.Count; k++ ) {
-                    var action = System_Cache.Dispatch_BaseEnhance_TileDrawEffects[ activePets[ k ] ];
+                int count = activeIndices.Count;
+                for ( int k = 0; k < count; k++ ) {
+                    int index = activeIndices[ k ];
+                    var action = actions[ index ];
+                    
                     if ( action != null ) {
                         if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_TileDrawEffects++;
                         action( i, j, type, spriteBatch, ref drawData );
