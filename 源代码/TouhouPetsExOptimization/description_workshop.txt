@@ -6,6 +6,9 @@
 因此我可以合理地怀疑，原模组因为恼羞成怒而对一个全功能可由用户自行决定开关的优化模组，进行功能拦截。
 目前已被本补丁修复。
 
+如需测试，请随意访问本补丁的源代码，尝试通过本补丁调用 TryGetMod 或 NewText，最后构筑模组文件并进入游戏测试
+[url=https://github.com/fI8YGFSOcaTYxhhuu3/TouhouPetsExOptimization]此处可访问本补丁的源代码仓库以及与原模组的评论截图[/url]
+
 [hr][/hr]
 
 [h3] 描述 [/h3]
@@ -15,7 +18,6 @@
 后因一些原因，我只好制作一个独立的优化补丁模组来展示和修复原模组中的性能缺陷。
 性能详情可见本补丁模组的展示图片。
 本补丁的代码公开于 Github，并附带导致我开发本补丁的详细历史因素。
-[url=https://github.com/fI8YGFSOcaTYxhhuu3/TouhouPetsExOptimization]GitHub 仓库[/url]
 
 [b]本补丁未使用原模组中的任何资源文件（美术、音效等），甚至开发时未引用原模组的动态链接库。[/b]
 
