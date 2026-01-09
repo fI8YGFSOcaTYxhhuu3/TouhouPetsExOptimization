@@ -63,16 +63,12 @@ public class IL_GEnhanceNPCs_AI : BaseHook {
         switch ( MainConfigCache.优化模式_GEnhanceNPCs_AI ) {
             case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
-                var activeIndices = System_State.ActiveEnhanceIndices;
+                var activeIndices = System.Runtime.InteropServices.CollectionsMarshal.AsSpan( System_State.ActiveIndices_NPCAI );
                 var actions = System_Cache.Actions_BaseEnhance_NPCAI;
 
-                int count = activeIndices.Count;
-                for ( int i = 0; i < count; i++ ) {
-                    var action = actions[ activeIndices[ i ] ];
-                    if ( action != null ) {
-                        if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_NPCAI++;
-                        action( npc );
-                    }
+                for ( int i = 0; i < activeIndices.Length; i++ ) {
+                    if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_NPCAI++;
+                    actions[ activeIndices[ i ] ]( npc );
                 }
 
                 return;

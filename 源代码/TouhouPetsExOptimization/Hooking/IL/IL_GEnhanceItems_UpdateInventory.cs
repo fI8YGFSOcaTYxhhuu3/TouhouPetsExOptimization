@@ -69,32 +69,21 @@ public class IL_GEnhanceItems_UpdateInventory : BaseHook {
         switch ( MainConfigCache.优化模式_GEnhanceItems_UpdateInventory ) {
             case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
-                var activeIndices = System_State.ActiveEnhanceIndices;
+                var activeIndices = System.Runtime.InteropServices.CollectionsMarshal.AsSpan( System_State.ActiveIndices_ItemUpdateInventory );
                 var actions = System_Cache.Actions_BaseEnhance_ItemUpdateInventory;
-                var itemMap = System_Cache.ItemToEnhanceIndex;
+                int selfIndex = System_Cache.ItemToEnhanceIndex[ item.type ];
 
-                int selfIndex = -1;
-                if ( item.type >= 0 && item.type < itemMap.Length ) {
-                    selfIndex = itemMap[ item.type ];
-                }
-                int count = activeIndices.Count;
-                for ( int i = 0; i < count; i++ ) {
+                for ( int i = 0; i < activeIndices.Length; i++ ) {
+                    if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;
                     int index = activeIndices[ i ];
-                    var action = actions[ index ];
-                    
-                    if ( action != null ) {
-                        if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;
-                        action( item, player );
-                        if ( index == selfIndex ) selfIndex = -1;
-                    }
+                    if ( index == selfIndex ) selfIndex = -1;
+                    actions[ index ]( item, player );
                 }
 
                 if ( selfIndex != -1 ) {
+                    if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;
                     var selfAction = actions[ selfIndex ];
-                    if ( selfAction != null ) {
-                        if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;
-                        selfAction( item, player );
-                    }
+                    selfAction( item, player );
                 }
 
                 return;
