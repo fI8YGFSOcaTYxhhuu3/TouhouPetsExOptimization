@@ -13,7 +13,7 @@ namespace TouhouPetsExOptimization.Systems;
 
 
 
-public static class System_缓存_静态数据 {
+public class System_缓存_静态数据 : ModSystem {
 
     private static readonly ILog 日志 = ModContent.GetInstance<TouhouPetsExOptimization>().Logger;
     private static void 记录( string 文本 ) => 日志.Warn( $"[System_缓存_静态数据] {文本}" );
@@ -33,7 +33,7 @@ public static class System_缓存_静态数据 {
     public static int[] 宠物索引映射_物品ID;
     public static Dictionary<string, int> 宠物索引映射_宠物文本;
 
-    public static void Unload() {
+    public override void Unload() {
         委托映射_BaseEnhance_TileDrawEffects = null;
         委托映射_BaseEnhance_NPCAI = null;
         委托映射_BaseEnhance_NPCPreAI = null;
@@ -50,7 +50,7 @@ public static class System_缓存_静态数据 {
             宠物索引映射_物品ID = new int[ ItemLoader.ItemCount ]; Array.Fill( 宠物索引映射_物品ID, -1 );
             宠物索引映射_宠物文本 = new Dictionary<string, int>();
 
-            if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod 目标模组 ) ) { 记录( "未找到前置模组 TouhouPetsEx" ); return; }
+            Mod 目标模组 = TouhouPetsExOptimization.模组_东方小祖宗; if ( 目标模组 == null ) { 记录( "未找到前置模组 TouhouPetsEx" ); return; }
 
             Type 类型_BaseEnhance = 目标模组.Code.GetType( "TouhouPetsEx.Enhance.Core.BaseEnhance" ); if ( 类型_BaseEnhance == null ) { 记录( "未找到类 TouhouPetsEx.Enhance.Core.BaseEnhance" ); return; }
             Type 类型_EnhanceRegistry = 目标模组.Code.GetType( "TouhouPetsEx.Enhance.Core.EnhanceRegistry" ); if ( 类型_EnhanceRegistry == null ) { 记录( "未找到类 TouhouPetsEx.Enhance.Core.EnhanceRegistry" ); return; }

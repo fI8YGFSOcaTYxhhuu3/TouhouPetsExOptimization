@@ -51,14 +51,14 @@ public class System_缓存_动态数据 : ModSystem {
         字段_ActivePassiveEnhance = null;
     }
 
-    public override void PostSetupContent() {
+    public static void 构筑() {
         System_补丁自检.缓存状态_动态数据 = false;
 
         try {
-            System_缓存_静态数据.构筑(); if ( !System_补丁自检.缓存状态_静态数据 ) return;
+            if ( !System_补丁自检.缓存状态_静态数据 ) return;
             宠物索引重复状态 = new bool[ System_缓存_静态数据.委托映射_BaseEnhance_TileDrawEffects.Length ];
 
-            if ( !ModLoader.TryGetMod( "TouhouPetsEx", out Mod 目标模组 ) ) { 记录( "未找到前置模组 TouhouPetsEx" ); return; }
+            Mod 目标模组 = TouhouPetsExOptimization.模组_东方小祖宗; if ( 目标模组 == null ) { 记录( "未找到前置模组 TouhouPetsEx" ); return; }
 
             if ( !目标模组.TryFind( "EnhancePlayers", out ModPlayer 模组玩家模板 ) ) { 记录( "未找到 ModPlayer 实例 TouhouPetsEx.EnhancePlayers" ); return; }
             模组玩家索引_EnhancePlayers = 模组玩家模板.Index;
