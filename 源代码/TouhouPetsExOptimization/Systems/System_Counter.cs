@@ -65,7 +65,7 @@ public class System_Counter : ModSystem {
         显示数值_调用计数_BaseEnhance_TileDrawEffects = 调用计数_BaseEnhance_TileDrawEffects;
         显示数值_调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory = 调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory;
 
-        显示文本_补丁状态 = System_PatchState.IsSafeToOptimize ? "未发生已知错误" : "出现已知错误，补丁已自动失效";
+        显示文本_补丁状态 = System_补丁自检.未发生已知错误 ? "未发生已知错误" : "出现已知错误，补丁已自动失效";
 
         调用计数_GEnhanceTile_DrawEffects = 0;
         调用计数_GEnhanceNPCs_AI = 0;

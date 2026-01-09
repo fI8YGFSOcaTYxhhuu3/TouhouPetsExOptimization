@@ -52,7 +52,7 @@ public class IL_GEnhanceItems_UpdateInventory : BaseHook {
         ILLabel labelRunOriginal = c.DefineLabel();
         ILLabel labelSkipOriginal = c.DefineLabel();
 
-        c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceItems_UpdateInventory == MainConfigs.优化模式.关闭补丁 || !System_PatchState.IsSafeToOptimize; } );
+        c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceItems_UpdateInventory == MainConfigs.优化模式.关闭补丁 || !System_补丁自检.未发生已知错误; } );
 
         c.Emit( OpCodes.Brtrue, labelRunOriginal );
         c.Emit( OpCodes.Pop );
@@ -69,9 +69,9 @@ public class IL_GEnhanceItems_UpdateInventory : BaseHook {
         switch ( MainConfigCache.优化模式_GEnhanceItems_UpdateInventory ) {
             case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return;
             case MainConfigs.优化模式.智能缓存:
-                var activeIndices = System.Runtime.InteropServices.CollectionsMarshal.AsSpan( System_State.ActiveIndices_ItemUpdateInventory );
-                var actions = System_Cache.Actions_BaseEnhance_ItemUpdateInventory;
-                int selfIndex = System_Cache.ItemToEnhanceIndex[ item.type ];
+                var activeIndices = System.Runtime.InteropServices.CollectionsMarshal.AsSpan( System_缓存_动态数据.生效宠物索引_ItemUpdateInventory );
+                var actions = System_缓存_静态数据.委托映射_BaseEnhance_ItemUpdateInventory;
+                int selfIndex = System_缓存_静态数据.宠物索引映射_物品ID[ item.type ];
 
                 for ( int i = 0; i < activeIndices.Length; i++ ) {
                     if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;

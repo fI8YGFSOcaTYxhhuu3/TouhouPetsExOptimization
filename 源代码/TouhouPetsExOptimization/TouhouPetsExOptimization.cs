@@ -31,9 +31,7 @@ public class TouhouPetsExOptimization : Mod {
     public override void Unload() {
         foreach ( var hook in _hooks ) hook.Unload();
         _hooks.Clear();
-        System_Cache.Unload();
+        System_缓存_静态数据.Unload();
     }
-
-    public override void PostSetupContent() { System_Cache.BuildCache(); }
 
 }

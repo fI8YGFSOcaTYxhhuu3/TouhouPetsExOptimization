@@ -51,7 +51,7 @@ public class IL_GEnhanceNPCs_PreAI : BaseHook {
 
         ILLabel labelRunOriginal = c.DefineLabel();
 
-        c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceNPCs_PreAI == MainConfigs.优化模式.关闭补丁 || !System_PatchState.IsSafeToOptimize; } );
+        c.EmitDelegate( () => { return MainConfigCache.优化模式_GEnhanceNPCs_PreAI == MainConfigs.优化模式.关闭补丁 || !System_补丁自检.未发生已知错误; } );
         c.Emit( OpCodes.Brtrue, labelRunOriginal );
         c.Emit( OpCodes.Ldarg_1 );
         c.EmitDelegate( OptimizedCode );
@@ -63,8 +63,8 @@ public class IL_GEnhanceNPCs_PreAI : BaseHook {
         switch ( MainConfigCache.优化模式_GEnhanceNPCs_PreAI ) {
             case MainConfigs.优化模式.暴力截断 or MainConfigs.优化模式.旧版模拟: return true;
             case MainConfigs.优化模式.智能缓存:
-                var activeIndices = System.Runtime.InteropServices.CollectionsMarshal.AsSpan( System_State.ActiveIndices_NPCPreAI );
-                var actions = System_Cache.Actions_BaseEnhance_NPCPreAI;
+                var activeIndices = System.Runtime.InteropServices.CollectionsMarshal.AsSpan( System_缓存_动态数据.生效宠物索引_NPCPreAI );
+                var actions = System_缓存_静态数据.委托映射_BaseEnhance_NPCPreAI;
                 bool? finalResult = null;
 
                 for ( int i = 0; i < activeIndices.Length; i++ ) {
