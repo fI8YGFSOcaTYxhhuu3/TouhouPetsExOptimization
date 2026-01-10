@@ -76,7 +76,19 @@ public class System_缓存_静态数据 : ModSystem {
                 Type 宠物类型 = 宠物能力.GetType();
 
                 宠物索引映射_宠物文本.TryAdd( 宠物ID.ToString(), 宠物索引 );
-                if ( 方法_GetBoundItemTypes.Invoke( null, [ 宠物ID ] ) is IEnumerable<int> 相关物品ID ) foreach ( int 物品ID in 相关物品ID ) { 宠物索引映射_物品ID[ 物品ID ] = 宠物索引; 计数_注册物品++; }
+                if ( 方法_GetBoundItemTypes.Invoke( null, [ 宠物ID ] ) is IEnumerable<int> 相关物品ID ) foreach ( int 物品ID in 相关物品ID ) {
+                        if ( 宠物索引映射_物品ID[ 物品ID ] != -1 ) {
+                            string 冲突物品名称 = Lang.GetItemNameValue( 物品ID );
+                            int 已有宠物索引 = 宠物索引映射_物品ID[ 物品ID ];
+                            object 已有宠物能力 = 列表_宠物能力[ 已有宠物索引 ];
+                            object 已有宠物ID = 属性_EnhanceId.GetValue( 已有宠物能力 );
+                            记录( $"物品 [{冲突物品名称}] (ID:{物品ID}) 存在多重绑定冲突。\n" +
+                                  $"   -> 原绑定：{已有宠物ID} (Index:{已有宠物索引})\n" +
+                                  $"   -> 新绑定：{宠物ID} (Index:{宠物索引})" );
+                        }
+                        宠物索引映射_物品ID[ 物品ID ] = 宠物索引; 
+                        计数_注册物品++; 
+                    }
 
                 注册宠物函数( 宠物索引, 宠物能力, 宠物类型, 类型_BaseEnhance, "TileDrawEffects", typeof( 委托_BaseEnhance_TileDrawEffects ), 委托映射_BaseEnhance_TileDrawEffects );
                 注册宠物函数( 宠物索引, 宠物能力, 宠物类型, 类型_BaseEnhance, "NPCAI", typeof( 委托_BaseEnhance_NPCAI ), 委托映射_BaseEnhance_NPCAI );
