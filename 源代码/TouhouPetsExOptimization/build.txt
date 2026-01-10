@@ -1,6 +1,6 @@
 displayName = 东方小祖宗 - 性能缺陷优化
 author = 匿名
-version = 0.5
+version = 0.6
 includeSource = true
 modReferences = TouhouPetsEx
 sortAfter = TouhouPetsEx
