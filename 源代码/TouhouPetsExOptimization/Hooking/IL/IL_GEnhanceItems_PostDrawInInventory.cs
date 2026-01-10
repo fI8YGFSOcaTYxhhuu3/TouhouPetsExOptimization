@@ -87,8 +87,9 @@ public class IL_GEnhanceItems_PostDrawInInventory : BaseHook {
                 }
 
                 if ( selfIndex != -1 ) {
+                    var selfAction = actions[ selfIndex ]; if ( selfAction == null ) return;
                     if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;
-                    actions[ selfIndex ]( item, spriteBatch, position, frame, drawColor, itemColor, origin, scale );
+                    selfAction( item, spriteBatch, position, frame, drawColor, itemColor, origin, scale );
                 }
 
                 return;

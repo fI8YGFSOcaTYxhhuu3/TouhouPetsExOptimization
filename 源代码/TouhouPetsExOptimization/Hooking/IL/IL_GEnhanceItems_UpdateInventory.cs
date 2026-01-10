@@ -81,8 +81,8 @@ public class IL_GEnhanceItems_UpdateInventory : BaseHook {
                 }
 
                 if ( selfIndex != -1 ) {
+                    var selfAction = actions[ selfIndex ]; if ( selfAction == null ) return;
                     if ( MainConfigCache.性能监控 ) System_Counter.调用计数_BaseEnhance_PostDrawInInventory_UpdateInventory++;
-                    var selfAction = actions[ selfIndex ];
                     selfAction( item, player );
                 }
 
